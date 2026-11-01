@@ -40,7 +40,7 @@
             }
 
             const factura = {};
-            document.querySelectorAll("input, select").forEach(function (campo) {
+            document.querySelectorAll("input, select, textarea").forEach(function (campo) {
                 factura[campo.id] = campo.value;
             });
 
@@ -70,7 +70,7 @@
             const nuevo = productos.querySelector(".producto").cloneNode(true);
 
             // Cada campo necesita un id distinto: Montura_2, Color_2, ...
-            nuevo.querySelectorAll("input, select").forEach(function (campo) {
+            nuevo.querySelectorAll("input, select, textarea").forEach(function (campo) {
                 campo.id = campo.id + "_" + contadorProductos;
                 campo.name = campo.id;
                 campo.value = "";
