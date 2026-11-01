@@ -10,6 +10,21 @@
     <link rel="stylesheet" href="facturacion.css">
 </head>
 <body>
+
+<!-- Buscar una factura anterior para verla o editarla (no sale al imprimir) -->
+<div class="buscador">
+    <div class="barra-busqueda">
+        <label for="Buscar">Buscar factura</label>
+        <input type="search" id="Buscar" placeholder="Número de factura, documento o nombre del cliente">
+        <button type="button" id="botonBuscar" class="boton-principal">Buscar</button>
+    </div>
+    <ul id="resultados" hidden></ul>
+    <div id="avisoEdicion" class="aviso-edicion" hidden>
+        <span>Editando la factura <strong id="textoEdicion"></strong>. Al guardar se actualiza esta factura.</span>
+        <button type="button" id="nuevaFactura" class="boton-secundario">Cancelar y hacer factura nueva</button>
+    </div>
+</div>
+
 <main class="hoja">
 
     <!-- Encabezado: datos del negocio a la izquierda, número y fecha a la derecha -->

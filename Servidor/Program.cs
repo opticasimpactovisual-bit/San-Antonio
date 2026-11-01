@@ -1,9 +1,11 @@
 // Servidor de facturación - Centro Óptico San Antonio
 // Muestra la página Facturacion.html y guarda las facturas en SQL Server.
 //
-//   POST /api/facturas        guarda una factura con su cliente y sus productos
-//   GET  /api/facturas        lista las últimas 50 facturas
-//   GET  /api/facturas/{id}   muestra una factura con todos sus productos
+//   POST /api/facturas                  guarda una factura con su cliente y sus productos
+//   PUT  /api/facturas/{id}             guarda los cambios de una factura anterior
+//   GET  /api/facturas                  lista las últimas 50 facturas
+//   GET  /api/facturas/buscar?texto=..  busca por número de factura, documento o nombre
+//   GET  /api/facturas/{id}             muestra una factura con todos sus productos
 
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.FileProviders;
@@ -24,8 +26,16 @@ app.UseDefaultFiles(paginaInicio);
 app.UseStaticFiles(new StaticFileOptions { FileProvider = carpetaPagina });
 
 
-// ---------- Guardar una factura ----------
-app.MapPost("/api/facturas", async (FacturaDto f) =>
+// ---------- Guardar una factura nueva ----------
+app.MapPost("/api/facturas", (FacturaDto f) => GuardarFactura(f, null));
+
+
+// ---------- Guardar los cambios de una factura anterior ----------
+app.MapPut("/api/facturas/{id:int}", (int id, FacturaDto f) => GuardarFactura(f, id));
+
+
+// Si idExistente es null crea la factura; si no, la actualiza y reemplaza sus productos
+async Task<IResult> GuardarFactura(FacturaDto f, int? idExistente)
 {
     try
     {
@@ -35,12 +45,22 @@ app.MapPost("/api/facturas", async (FacturaDto f) =>
 
         int? idCliente = await GuardarCliente(cn, tx, f.Cliente);
 
-        var cmd = new SqlCommand(@"
-            INSERT INTO dbo.facturas (numero_factura, fecha_venta, id_cliente, total, abono, medio_pago,
-                                      fecha_entrega, hora_entrega, detalle_entrega, vendedor)
-            OUTPUT INSERTED.id_factura
-            VALUES (@numero, @fecha, @cliente, @total, @abono, @medioPago,
-                    @fechaEntrega, @horaEntrega, @detalle, @vendedor);", cn, tx);
+        var cmd = idExistente is null
+            ? new SqlCommand(@"
+                INSERT INTO dbo.facturas (numero_factura, fecha_venta, id_cliente, total, abono, medio_pago,
+                                          fecha_entrega, hora_entrega, detalle_entrega, vendedor)
+                OUTPUT INSERTED.id_factura
+                VALUES (@numero, @fecha, @cliente, @total, @abono, @medioPago,
+                        @fechaEntrega, @horaEntrega, @detalle, @vendedor);", cn, tx)
+            : new SqlCommand(@"
+                UPDATE dbo.facturas
+                SET numero_factura = @numero, fecha_venta = @fecha, id_cliente = @cliente,
+                    total = @total, abono = @abono, medio_pago = @medioPago,
+                    fecha_entrega = @fechaEntrega, hora_entrega = @horaEntrega,
+                    detalle_entrega = @detalle, vendedor = @vendedor
+                OUTPUT INSERTED.id_factura
+                WHERE id_factura = @id;", cn, tx);
+        if (idExistente is not null) cmd.Parameters.AddWithValue("@id", idExistente);
         cmd.Parameters.AddWithValue("@numero", Valor(f.NumeroFactura));
         cmd.Parameters.AddWithValue("@fecha", (object?)f.FechaVenta ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@cliente", (object?)idCliente ?? DBNull.Value);
@@ -51,7 +71,16 @@ app.MapPost("/api/facturas", async (FacturaDto f) =>
         cmd.Parameters.AddWithValue("@horaEntrega", (object?)f.HoraEntrega?.ToTimeSpan() ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@detalle", Valor(f.DetalleEntrega));
         cmd.Parameters.AddWithValue("@vendedor", Valor(f.Vendedor));
-        var idFactura = (int)(await cmd.ExecuteScalarAsync())!;
+        if (await cmd.ExecuteScalarAsync() is not int idFactura)
+            return Results.NotFound(new { mensaje = "No existe la factura " + idExistente });
+
+        // Al editar, los productos anteriores se borran y se guardan los del formulario
+        if (idExistente is not null)
+        {
+            var borrar = new SqlCommand("DELETE FROM dbo.factura_productos WHERE id_factura = @id;", cn, tx);
+            borrar.Parameters.AddWithValue("@id", idFactura);
+            await borrar.ExecuteNonQueryAsync();
+        }
 
         // Una fila por cada grupo de "Agregar otro producto"
         foreach (var p in f.Productos ?? [])
@@ -68,7 +97,7 @@ app.MapPost("/api/facturas", async (FacturaDto f) =>
         }
 
         await tx.CommitAsync();
-        return Results.Ok(new { idFactura, mensaje = "Factura guardada." });
+        return Results.Ok(new { idFactura, mensaje = idExistente is null ? "Factura guardada." : "Factura actualizada." });
     }
     catch (SqlException ex) when (ex.Number == 547)
     {
@@ -83,6 +112,27 @@ app.MapPost("/api/facturas", async (FacturaDto f) =>
         app.Logger.LogError(ex, "Error de SQL Server al guardar la factura");
         return Results.Json(new { mensaje = "No se pudo guardar en SQL Server: " + ex.Message }, statusCode: 500);
     }
+}
+
+
+// ---------- Buscar facturas por número, documento o nombre del cliente ----------
+app.MapGet("/api/facturas/buscar", async (string? texto) =>
+{
+    if (string.IsNullOrWhiteSpace(texto)) return Results.Ok(new List<Dictionary<string, object?>>());
+
+    await using var cn = new SqlConnection(conexion);
+    await cn.OpenAsync();
+    var cmd = new SqlCommand(@"
+        SELECT TOP 30 f.id_factura, f.numero_factura, f.fecha_venta, c.nombre AS cliente,
+               c.tipo_documento, c.documento, f.total, f.saldo
+        FROM dbo.facturas f
+        LEFT JOIN dbo.clientes c ON c.id_cliente = f.id_cliente
+        WHERE f.numero_factura = @texto
+           OR c.documento = @texto
+           OR c.nombre LIKE '%' + @texto + '%'
+        ORDER BY f.id_factura DESC;", cn);
+    cmd.Parameters.AddWithValue("@texto", texto.Trim());
+    return Results.Ok(await LeerFilas(cmd));
 });
 
 

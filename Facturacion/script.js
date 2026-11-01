@@ -35,6 +35,9 @@
             return texto === "" ? null : texto;
         }
 
+        // Código interno de la factura que se está editando (null = factura nueva)
+        let idFacturaEditando = null;
+
         // Envía la factura al servidor, que la guarda en SQL Server.
         // Ningún campo es obligatorio y el número de factura se puede repetir.
         async function guardarFactura() {
@@ -67,8 +70,9 @@
             };
 
             try {
-                const respuesta = await fetch("/api/facturas", {
-                    method: "POST",
+                const editando = idFacturaEditando !== null;
+                const respuesta = await fetch(editando ? "/api/facturas/" + idFacturaEditando : "/api/facturas", {
+                    method: editando ? "PUT" : "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(factura)
                 });
@@ -78,7 +82,11 @@
                     return;
                 }
                 const numero = factura.numeroFactura ? "No. " + factura.numeroFactura + " " : "";
-                alert("Factura " + numero + "guardada en la base de datos (código interno " + datos.idFactura + ").");
+                if (editando) {
+                    alert("Factura " + numero + "actualizada en la base de datos.");
+                } else {
+                    alert("Factura " + numero + "guardada en la base de datos (código interno " + datos.idFactura + ").");
+                }
                 limpiarFormulario();
             } catch (error) {
                 alert("No hay conexión con el servidor. Inicie el servidor y abra la página en http://localhost:5000");
@@ -100,10 +108,149 @@
                 campo.selectedIndex = 0;
             });
 
+            // Vuelve al modo "factura nueva"
+            idFacturaEditando = null;
+            document.getElementById("avisoEdicion").hidden = true;
+            document.getElementById("resultados").hidden = true;
+            document.getElementById("guardar").textContent = "Guardar Factura";
+
             window.scrollTo(0, 0);
         }
 
         document.getElementById("guardar").addEventListener("click", guardarFactura);
+
+
+        // ---------- Buscar y editar una factura anterior ----------
+        const resultados = document.getElementById("resultados");
+
+        // "2026-11-01T00:00:00" -> "2026-11-01" (formato de los campos de fecha)
+        function soloFecha(texto) {
+            return texto ? texto.substring(0, 10) : "";
+        }
+
+        // "2026-11-01" -> "01/11/2026"
+        function fechaCorta(texto) {
+            const f = soloFecha(texto);
+            return f ? f.substring(8, 10) + "/" + f.substring(5, 7) + "/" + f.substring(0, 4) : "Sin fecha";
+        }
+
+        function pesos(numero) {
+            return "$" + Number(numero || 0).toLocaleString("es-CO");
+        }
+
+        // Pone un valor en una lista; si viene vacío deja la primera opción
+        function elegir(campo, valor) {
+            campo.value = valor || "";
+            if (campo.selectedIndex === -1) campo.selectedIndex = 0;
+        }
+
+        async function buscarFacturas() {
+            const texto = document.getElementById("Buscar").value.trim();
+            if (!texto) return;
+
+            let lista;
+            try {
+                const respuesta = await fetch("/api/facturas/buscar?texto=" + encodeURIComponent(texto));
+                lista = await respuesta.json();
+            } catch (error) {
+                alert("No hay conexión con el servidor. Inicie el servidor y abra la página en http://localhost:5000");
+                return;
+            }
+
+            resultados.innerHTML = "";
+            if (lista.length === 0) {
+                const vacio = document.createElement("li");
+                vacio.className = "vacio";
+                vacio.textContent = "No se encontró ninguna factura con \"" + texto + "\".";
+                resultados.appendChild(vacio);
+            }
+            lista.forEach(function (f) {
+                const boton = document.createElement("button");
+                boton.type = "button";
+                const partes = [
+                    ["num", "No. " + (f.numero_factura || "—")],
+                    ["fec", fechaCorta(f.fecha_venta)],
+                    ["cli", (f.cliente || "Sin cliente") + (f.documento ? " · " + (f.tipo_documento || "") + " " + f.documento : "")],
+                    ["val", "Total " + pesos(f.total) + " · Saldo " + pesos(f.saldo)]
+                ];
+                partes.forEach(function (p) {
+                    const span = document.createElement("span");
+                    span.className = p[0];
+                    span.textContent = p[1];
+                    boton.appendChild(span);
+                });
+                boton.addEventListener("click", function () {
+                    cargarFactura(f.id_factura);
+                });
+                const li = document.createElement("li");
+                li.appendChild(boton);
+                resultados.appendChild(li);
+            });
+            resultados.hidden = false;
+        }
+
+        // Trae la factura del servidor y la pone en el formulario para editarla
+        async function cargarFactura(id) {
+            let f;
+            try {
+                const respuesta = await fetch("/api/facturas/" + id);
+                f = await respuesta.json();
+                if (!respuesta.ok) {
+                    alert(f.mensaje);
+                    return;
+                }
+            } catch (error) {
+                alert("No hay conexión con el servidor. Inicie el servidor y abra la página en http://localhost:5000");
+                return;
+            }
+
+            limpiarFormulario();
+
+            document.getElementById("N_Factura").value = f.numero_factura || "";
+            document.getElementById("fecha").value = soloFecha(f.fecha_venta);
+            total.value = f.total ? Number(f.total).toLocaleString("es-CO") : "";
+            abono.value = f.abono ? Number(f.abono).toLocaleString("es-CO") : "";
+            calcularSaldo();
+            elegir(document.getElementById("MedioPago"), f.medio_pago);
+
+            document.getElementById("Cliente").value = f.cliente || "";
+            elegir(document.getElementById("Tipo_documento"), f.tipo_documento);
+            document.getElementById("Documento").value = f.documento || "";
+            document.getElementById("Telefono").value = f.telefono || "";
+            document.getElementById("email").value = f.email || "";
+
+            // Un grupo de producto por cada producto guardado
+            const lista = f.productos || [];
+            for (let i = 1; i < lista.length; i++) {
+                document.getElementById("agregarProducto").click();
+            }
+            document.querySelectorAll(".producto").forEach(function (grupo, i) {
+                const p = lista[i];
+                if (!p) return;
+                elegir(grupo.querySelector("select"), p.tipo_montura);
+                grupo.querySelector("[id^='Color']").value = p.color || "";
+                grupo.querySelector("[id^='Referencia']").value = p.referencia || "";
+                grupo.querySelector("textarea").value = p.tipo_lente || "";
+            });
+
+            document.getElementById("FechaEntrega").value = soloFecha(f.fecha_entrega);
+            document.getElementById("HoraEntrega").value = f.hora_entrega ? f.hora_entrega.substring(0, 5) : "";
+            document.getElementById("Detalle").value = f.detalle_entrega || "";
+            document.getElementById("Vendedor").value = f.vendedor || "";
+
+            // Modo edición: Guardar actualiza esta factura en vez de crear otra
+            idFacturaEditando = f.id_factura;
+            document.getElementById("textoEdicion").textContent =
+                "No. " + (f.numero_factura || "—") + (f.cliente ? " de " + f.cliente : "");
+            document.getElementById("avisoEdicion").hidden = false;
+            document.getElementById("guardar").textContent = "Guardar cambios";
+        }
+
+        document.getElementById("botonBuscar").addEventListener("click", buscarFacturas);
+        document.getElementById("Buscar").addEventListener("keydown", function (evento) {
+            if (evento.key === "Enter") buscarFacturas();
+        });
+        document.getElementById("nuevaFactura").addEventListener("click", limpiarFormulario);
 
         // Abre la ventana de impresión del navegador (también permite guardar como PDF)
         document.getElementById("imprimir").addEventListener("click", function () {
