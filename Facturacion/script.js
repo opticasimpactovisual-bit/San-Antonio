@@ -29,23 +29,58 @@
             calcularSaldo();
         });
 
-        // Guarda la factura en el navegador (localStorage) como una lista.
+        // Devuelve el valor de un campo, o null si está vacío
+        function valor(id) {
+            const texto = document.getElementById(id).value.trim();
+            return texto === "" ? null : texto;
+        }
+
+        // Envía la factura al servidor, que la guarda en SQL Server.
         // Ningún campo es obligatorio y el número de factura se puede repetir.
-        function guardarFactura() {
-            const numero = document.getElementById("N_Factura").value.trim();
+        async function guardarFactura() {
+            const factura = {
+                numeroFactura: valor("N_Factura"),
+                fechaVenta: valor("fecha"),
+                total: leerPesos(total),
+                abono: leerPesos(abono),
+                cliente: {
+                    nombre: valor("Cliente"),
+                    tipoDocumento: valor("Tipo_documento"),
+                    documento: valor("Documento"),
+                    telefono: valor("Telefono"),
+                    email: valor("email")
+                },
+                // Un producto por cada grupo de "Agregar otro producto"
+                productos: Array.from(document.querySelectorAll(".producto")).map(function (grupo) {
+                    return {
+                        tipoMontura: grupo.querySelector("select").value || null,
+                        color: grupo.querySelector("[id^='Color']").value.trim() || null,
+                        referencia: grupo.querySelector("[id^='Referencia']").value.trim() || null,
+                        tipoLente: grupo.querySelector("textarea").value.trim() || null
+                    };
+                }),
+                fechaEntrega: valor("FechaEntrega"),
+                horaEntrega: valor("HoraEntrega"),
+                detalleEntrega: valor("Detalle"),
+                vendedor: valor("Vendedor")
+            };
 
-            const factura = { guardadaEn: new Date().toISOString() };
-            document.querySelectorAll("input, select, textarea").forEach(function (campo) {
-                factura[campo.id] = campo.value;
-            });
-
-            let facturas = JSON.parse(localStorage.getItem("facturas") || "[]");
-            // Las facturas guardadas con la versión anterior estaban por número: se pasan a la lista
-            if (!Array.isArray(facturas)) facturas = Object.values(facturas);
-
-            facturas.push(factura);
-            localStorage.setItem("facturas", JSON.stringify(facturas));
-            alert(numero ? "Factura No. " + numero + " guardada." : "Factura guardada (sin número).");
+            try {
+                const respuesta = await fetch("/api/facturas", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(factura)
+                });
+                const datos = await respuesta.json();
+                if (!respuesta.ok) {
+                    alert("No se guardó la factura. " + datos.mensaje);
+                    return;
+                }
+                const numero = factura.numeroFactura ? "No. " + factura.numeroFactura + " " : "";
+                alert("Factura " + numero + "guardada en la base de datos (código interno " + datos.idFactura + ").");
+            } catch (error) {
+                alert("No hay conexión con el servidor. Inicie el servidor y abra la página en http://localhost:5000");
+            }
         }
 
         document.getElementById("guardar").addEventListener("click", guardarFactura);

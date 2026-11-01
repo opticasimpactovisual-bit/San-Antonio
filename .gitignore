@@ -1,0 +1,3 @@
+# Archivos que genera .NET al compilar el servidor
+Servidor/bin/
+Servidor/obj/
