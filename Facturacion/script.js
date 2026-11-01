@@ -29,28 +29,23 @@
             calcularSaldo();
         });
 
-        // Guarda la factura en el navegador (localStorage), usando el número de factura como clave
+        // Guarda la factura en el navegador (localStorage) como una lista.
+        // Ningún campo es obligatorio y el número de factura se puede repetir.
         function guardarFactura() {
             const numero = document.getElementById("N_Factura").value.trim();
-            const cliente = document.getElementById("Cliente").value.trim();
 
-            if (!numero || !cliente || !leerPesos(total)) {
-                alert("Para guardar, llene el número de factura, el nombre del cliente y el total.");
-                return;
-            }
-
-            const factura = {};
+            const factura = { guardadaEn: new Date().toISOString() };
             document.querySelectorAll("input, select, textarea").forEach(function (campo) {
                 factura[campo.id] = campo.value;
             });
 
-            const facturas = JSON.parse(localStorage.getItem("facturas") || "{}");
-            if (facturas[numero] && !confirm("La factura No. " + numero + " ya existe. ¿Desea reemplazarla?")) {
-                return;
-            }
-            facturas[numero] = factura;
+            let facturas = JSON.parse(localStorage.getItem("facturas") || "[]");
+            // Las facturas guardadas con la versión anterior estaban por número: se pasan a la lista
+            if (!Array.isArray(facturas)) facturas = Object.values(facturas);
+
+            facturas.push(factura);
             localStorage.setItem("facturas", JSON.stringify(facturas));
-            alert("Factura No. " + numero + " guardada.");
+            alert(numero ? "Factura No. " + numero + " guardada." : "Factura guardada (sin número).");
         }
 
         document.getElementById("guardar").addEventListener("click", guardarFactura);
