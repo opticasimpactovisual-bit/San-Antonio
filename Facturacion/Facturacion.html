@@ -52,15 +52,46 @@
     <label for="Documento">Documento de identidad:
         <input type="text" id="Documento" name="Documento" placeholder="Ingrese el documento de identidad"><br><br>
     </label>
+    <p>Datos de entrega</p>
+    <div id="productos">
+    <div class="producto">
+    <label for="Montura">Tipo de montura:
+        <select id="Montura" name="Montura">
+            <option value="TR90">TR 90</option>
+            <option value="Acetato">Acetato</option>
+            <option value="Metalica">Metalica</option>
+            <option value="3Piezas">3 Piezas</option>
+            <option value="SobrepuestoTR90">Sobrepuesto TR 90</option>
+            <option value="SobrepuestoMetalica">Sobrepuesto Metalica</option>
+            <option value="AireMetalica">Aire Metalica</option>
+            <option value="AireAcetato">Aire Acetato</option>
+            <option value="AireTr90">Aire TR 90</option>
+        </select>
+    </label>  
+    <label for="Color">Color de la montura:
+        <input type="text" id="Color" name="Color" placeholder="Ingrese el color de la montura">
+    </label>
+    <label for="Referencia">Referencia:
+        <input type="text" id="Referencia" name="Referencia" placeholder="Ingrese la referencia de la montura"><br><br>
+    </label>
+    <label for="Lente">Tipo de lente:
+        <input type="text" id="Lente" name="Lente" placeholder="Ingrese el tipo de lente">
+    </label>
+    <button type="button" class="quitar" hidden>Quitar</button><br><br>
+    </div>
+    </div>
+    <button type="button" id="agregarProducto">Agregar otra producto</button><br><br>
     <label for="FechaEntrega">Fecha de entrega:
         <input type="date" id="FechaEntrega" name="FechaEntrega">
     </label>
+    <p>Detalle de la entrega </p>
     <label for="HoraEntrega">Hora de entrega:
         <input type="time" id="HoraEntrega" name="HoraEntrega">
     </label>
     <label for="Detalle">Detalle de la entrega:
         <input type="text" id="Detalle" name="Detalle" placeholder="Ingrese el detalle de la entrega"><br><br>
     </label>
+    <p>Detalle del vendedor</p>
     <label for="Vendedor">Nombre del vendedor:
         <input type="text" id="Vendedor" name="Vendedor" placeholder="Ingrese el nombre del vendedor"><br><br>
     </label>

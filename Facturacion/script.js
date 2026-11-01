@@ -59,3 +59,32 @@
         document.getElementById("imprimir").addEventListener("click", function () {
             window.print();
         });
+
+
+        // Agrega otro grupo de montura, color, referencia y lente copiando el primero
+        const productos = document.getElementById("productos");
+        let contadorProductos = 1;
+
+        document.getElementById("agregarProducto").addEventListener("click", function () {
+            contadorProductos++;
+            const nuevo = productos.querySelector(".producto").cloneNode(true);
+
+            // Cada campo necesita un id distinto: Montura_2, Color_2, ...
+            nuevo.querySelectorAll("input, select").forEach(function (campo) {
+                campo.id = campo.id + "_" + contadorProductos;
+                campo.name = campo.id;
+                campo.value = "";
+                if (campo.tagName === "SELECT") campo.selectedIndex = 0;
+            });
+            nuevo.querySelectorAll("label").forEach(function (etiqueta) {
+                etiqueta.htmlFor = etiqueta.htmlFor + "_" + contadorProductos;
+            });
+
+            const quitar = nuevo.querySelector(".quitar");
+            quitar.hidden = false;
+            quitar.addEventListener("click", function () {
+                nuevo.remove();
+            });
+
+            productos.appendChild(nuevo);
+        });
