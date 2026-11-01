@@ -126,6 +126,8 @@ input[type="date"], input[type="time"], .medidas input {
     padding-top: 14px;
     border-top: 2px solid var(--tinta);
 }
+/* La primera fórmula queda justo debajo de la franja verde, sin otra línea */
+.formula:first-child { border-top: 0; padding-top: 0; }
 
 .cabeza-formula { display: flex; justify-content: space-between; align-items: center; }
 
