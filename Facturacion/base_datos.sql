@@ -87,7 +87,8 @@ CREATE TABLE dbo.factura_productos (
                     CONSTRAINT chk_tipo_montura CHECK (tipo_montura IN (
                         'TR90', 'Acetato', 'Metalica', '3Piezas',
                         'SobrepuestoTR90', 'SobrepuestoMetalica',
-                        'AireMetalica', 'AireAcetato', 'AireTr90')),
+                        'AireMetalica', 'AireAcetato', 'AireTr90',
+                        'Pacientedejamontura')),
     color           NVARCHAR(60),                          -- Color
     referencia      NVARCHAR(60),                          -- Referencia
     tipo_lente      NVARCHAR(MAX)                          -- Lente (texto largo)
