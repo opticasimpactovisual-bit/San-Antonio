@@ -1,0 +1,230 @@
+/* Mismos colores y letras de la factura (tomados del logo) */
+:root {
+    --fondo: #e4ece8;      /* escritorio alrededor de la hoja */
+    --papel: #ffffff;
+    --tinta: #1d2b25;      /* texto principal */
+    --gris: #5f6f68;       /* textos secundarios */
+    --linea: #d5e0db;
+    --verde: #1f7a2e;
+    --azul: #1aa3a8;
+    --verde-suave: #eef6f1;
+
+    --letra-titulo: "Nunito", "Trebuchet MS", sans-serif;
+    --letra-texto: "Source Sans 3", "Segoe UI", sans-serif;
+    --letra-numeros: "IBM Plex Mono", Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+body {
+    margin: 0;
+    padding: 28px 16px 48px;
+    background: var(--fondo);
+    color: var(--tinta);
+    font-family: var(--letra-texto);
+    font-size: 14px;
+}
+
+/* La hoja blanca */
+.hoja {
+    max-width: 816px;
+    margin: 0 auto;
+    padding: 48px;
+    background: var(--papel);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 12px 32px rgba(20, 50, 35, .14);
+    display: grid;
+    gap: 28px;
+}
+
+section { display: grid; gap: 14px; }
+
+/* ---------- Encabezado ---------- */
+.encabezado {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 24px;
+    align-items: start;
+}
+
+.logo { width: 100%; max-width: 330px; height: auto; display: block; }
+
+.negocio h1 {
+    margin: 10px 0 0;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+.negocio h2 { margin: 0; font-size: 13px; font-weight: 400; color: var(--gris); }
+.negocio p  { margin: 4px 0 0; font-size: 13px; line-height: 1.5; color: var(--gris); max-width: 46ch; }
+
+.documento { display: grid; justify-items: end; gap: 6px; text-align: right; }
+
+.regimen {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--azul);
+}
+
+.documento h3 {
+    margin: 0;
+    font-family: var(--letra-titulo);
+    font-size: 26px;
+    font-weight: 900;
+    color: var(--verde);
+}
+
+/* Franja de colores bajo el encabezado */
+.franja {
+    height: 6px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--azul), var(--verde));
+}
+
+/* ---------- Campos ---------- */
+input, select {
+    font: inherit;
+    color: var(--tinta);
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--linea);
+    padding: 4px 2px;
+    min-width: 0;
+    width: 100%;
+}
+input:focus, select:focus {
+    outline: none;
+    border-bottom-color: var(--verde);
+    background: var(--verde-suave);
+}
+input::placeholder { color: #a7b5ae; }
+
+/* Números, fechas y horas en letra de máquina */
+input[type="date"], input[type="time"], .medidas input {
+    font-family: var(--letra-numeros);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Etiqueta a la izquierda y campo a la derecha, en dos pares por fila */
+.campos {
+    display: grid;
+    grid-template-columns: max-content 1fr max-content 1fr;
+    gap: 8px 14px;
+    align-items: center;
+}
+.campos label { color: var(--gris); }
+.nombre input { grid-column: 2 / -1; }
+
+/* ---------- Cada fórmula ---------- */
+#formulas { display: grid; gap: 20px; }
+
+.formula {
+    display: grid;
+    gap: 16px;
+    padding-top: 14px;
+    border-top: 2px solid var(--tinta);
+}
+
+.cabeza-formula { display: flex; justify-content: space-between; align-items: center; }
+
+/* Título pequeño de cada fórmula: FÓRMULA 1, FÓRMULA 2... */
+.titulo_formula {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--gris);
+}
+
+/* Medidas de la fórmula en un cuadro verde, como los valores de la factura */
+.medidas {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    background: var(--verde-suave);
+    border-radius: 6px;
+    padding: 16px;
+}
+.celda { display: grid; gap: 4px; }
+.celda label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--gris);
+}
+.celda input { border-bottom-color: #c6d8cf; }
+
+/* ---------- Botones ---------- */
+button, input[type="submit"] {
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 6px;
+    padding: 8px 16px;
+    width: auto;
+}
+button:focus-visible, input[type="submit"]:focus-visible { outline: 2px solid var(--azul); outline-offset: 2px; }
+
+.boton-principal { background: var(--verde); color: #fff; border: 1px solid var(--verde); }
+.boton-principal:hover, .boton-principal:focus { background: #18631f; }
+
+.boton-secundario { background: var(--papel); color: var(--verde); border: 1px solid var(--verde); }
+.boton-secundario:hover { background: var(--verde-suave); }
+
+#agregar_formula { justify-self: start; padding: 6px 12px; font-size: 13px; }
+
+.quitar_formula {
+    background: none;
+    border: 1px solid var(--linea);
+    color: #b3402f;
+    padding: 4px 10px;
+    font-size: 12px;
+}
+
+.acciones { display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap; }
+
+/* ---------- Buscar factura (encima de la hoja) ---------- */
+.buscador {
+    max-width: 816px;
+    margin: 0 auto 16px;
+}
+.barra-busqueda {
+    display: grid;
+    grid-template-columns: max-content 1fr auto;
+    gap: 12px;
+    align-items: center;
+    background: var(--papel);
+    border-radius: 6px;
+    padding: 10px 14px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .08);
+}
+.barra-busqueda label { font-weight: 600; color: var(--gris); }
+
+/* ---------- Celular ---------- */
+@media (max-width: 640px) {
+    .hoja { padding: 20px; }
+    .encabezado { grid-template-columns: 1fr; }
+    .documento { justify-items: start; text-align: left; }
+    .campos { grid-template-columns: max-content 1fr; }
+    .medidas { grid-template-columns: 1fr 1fr; }
+    .barra-busqueda { grid-template-columns: 1fr auto; }
+    .barra-busqueda label { grid-column: 1 / -1; }
+}
+
+/* ---------- Impresión ---------- */
+@media print {
+    body { background: #fff; padding: 0; }
+    .buscador, .acciones { display: none !important; }
+    .hoja { box-shadow: none; padding: 0; max-width: none; }
+    button { display: none !important; }
+    input::placeholder { color: transparent; }
+    input { border-bottom-color: transparent; }
+    .medidas, .franja {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}

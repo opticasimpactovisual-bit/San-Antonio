@@ -4,59 +4,101 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Formulas Clientes</title>
-    <style>
-        .logo { width: 100%; max-width: 330px; height: auto; display: block; }
-        .formula { border: 1px solid #ccc; padding: 10px; margin-bottom: 15px; }
-    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+    <link rel="stylesheet" href="Formulas.css">
 </head>
 <body>
-    <img src="../Facturacion/Imagen/Logo%20JPG.jpg" alt="Centro Óptico San Antonio" class="logo">
-    <h1>Centro optico san Antonio</h1>
-    <h2>Nit: 40179945-1 Regimen Simplificado</h2>
-    <p>Accesorios - Monturas - Lentes - Despacho de Fórmulas Av 1 de Mayo No19 C - 09 sur Local A-01 Telefono 2722839 centro comercial Nueva vision Barrio Olaya Bogota DC</p>
 
-    <h3>Formulas Clientes</h3>
+<!-- Buscar por número de factura (no sale al imprimir) -->
+<div class="buscador">
+    <div class="barra-busqueda">
+        <label for="numero_factura">Número de factura</label>
+        <input type="text" id="numero_factura" name="numero_factura" placeholder="Ingrese el número de factura">
+        <input type="submit" value="Buscar" class="boton-principal">
+    </div>
+</div>
 
-         <label for="numero_factura">Número de factura:</label>
+<main class="hoja">
 
-        <input type="text" id="numero_factura" name="numero_factura"><br><br>
+    <!-- Encabezado: datos del negocio a la izquierda, título a la derecha -->
+    <header class="encabezado">
+        <div class="negocio">
+            <img src="../Facturacion/Imagen/Logo%20JPG.jpg" alt="Centro Óptico San Antonio" class="logo">
+            <h1>Centro optico san Antonio</h1>
+            <h2>Nit: 40179945-1 Regimen Simplificado</h2>
+            <p>Accesorios - Monturas - Lentes - Despacho de Fórmulas Av 1 de Mayo No19 C - 09 sur Local A-01 Telefono 2722839 centro comercial Nueva vision Barrio Olaya Bogota DC</p>
+        </div>
+        <div class="documento">
+            <span class="regimen">Régimen simplificado</span>
+            <h3>Formulas Clientes</h3>
+        </div>
+    </header>
 
-        <input type="submit" value="Buscar"><br><br>
+    <div class="franja"></div>
 
-        <!-- Cada fórmula va en su propio cuadro; el botón "Agregar otra fórmula" copia este cuadro vacío -->
+    <!-- Cada fórmula va en su propio cuadro; el botón "Agregar otra fórmula" copia este cuadro vacío -->
+    <section>
         <div id="formulas">
             <div class="formula">
-                <p class="titulo_formula">Fórmula 1</p>
-                <label for="nombre_cliente">Nombre del cliente:</label>
-                <input type="text" id="nombre_cliente" name="nombre_cliente"><br><br>
-                <label for="OD">Ojo derecho:</label>
-                <input type="text" id="OD" name="OD" placeholder="Ojo derecho"><br><br>
-                <label for="OI">Ojo izquierdo:</label>
-                <input type="text" id="OI" name="OI" placeholder="Ojo izquierdo"><br><br>
-                <label for="adicion">Adición:</label>
-                <input type="text" id="adicion" name="adicion" placeholder="Adición"><br><br>
-                <label for="distancia">Distancia:</label>
-                <input type="text" id="distancia" name="distancia" placeholder="Distancia"><br><br>
-                <label for="altura">Altura:</label>
-                <input type="text" id="altura" name="altura" placeholder="Altura"><br><br>
-                <label for="tipo_lente">Tipo de lente:</label>
-                <input type="text" id="tipo_lente" name="tipo_lente" placeholder="Tipo de lente"><br><br>
-                <label for="tipo_montura">Tipo de montura:</label>
-                <input type="text" id="tipo_montura" name="tipo_montura" placeholder="Tipo de montura"><br><br>
-                <label for="Doctor">Doctor:</label>
-                <input type="text" id="Doctor" name="Doctor" placeholder="Doctor"><br><br>
-                <label for="fecha_entrega">Fecha de entrega:</label>
-                <input type="date" id="fecha_entrega" name="fecha_entrega">
-                <label for="hora_entrega">Hora de entrega:</label>
-                <input type="time" id="hora_entrega" name="hora_entrega"><br><br>
-                <button type="button" class="quitar_formula" hidden>Quitar esta fórmula</button>
+                <div class="cabeza-formula">
+                    <p class="titulo_formula">Fórmula 1</p>
+                    <button type="button" class="quitar_formula" hidden>Quitar esta fórmula</button>
+                </div>
+
+                <div class="campos nombre">
+                    <label for="nombre_cliente">Nombre del cliente</label>
+                    <input type="text" id="nombre_cliente" name="nombre_cliente" placeholder="Ingrese el nombre del cliente">
+                </div>
+
+                <div class="medidas">
+                    <div class="celda">
+                        <label for="OD">Ojo derecho</label>
+                        <input type="text" id="OD" name="OD" placeholder="Ojo derecho">
+                    </div>
+                    <div class="celda">
+                        <label for="OI">Ojo izquierdo</label>
+                        <input type="text" id="OI" name="OI" placeholder="Ojo izquierdo">
+                    </div>
+                    <div class="celda">
+                        <label for="adicion">Adición</label>
+                        <input type="text" id="adicion" name="adicion" placeholder="Adición">
+                    </div>
+                    <div class="celda">
+                        <label for="distancia">Distancia</label>
+                        <input type="text" id="distancia" name="distancia" placeholder="Distancia">
+                    </div>
+                    <div class="celda">
+                        <label for="altura">Altura</label>
+                        <input type="text" id="altura" name="altura" placeholder="Altura">
+                    </div>
+                </div>
+
+                <div class="campos">
+                    <label for="tipo_lente">Tipo de lente</label>
+                    <input type="text" id="tipo_lente" name="tipo_lente" placeholder="Tipo de lente">
+                    <label for="tipo_montura">Tipo de montura</label>
+                    <input type="text" id="tipo_montura" name="tipo_montura" placeholder="Tipo de montura">
+                    <label for="Doctor">Doctor</label>
+                    <input type="text" id="Doctor" name="Doctor" placeholder="Doctor">
+                    <label for="fecha_entrega">Fecha de entrega</label>
+                    <input type="date" id="fecha_entrega" name="fecha_entrega">
+                    <label for="hora_entrega">Hora de entrega</label>
+                    <input type="time" id="hora_entrega" name="hora_entrega">
+                </div>
             </div>
         </div>
 
-        <button type="button" id="agregar_formula">Agregar otra fórmula</button><br><br>
+        <button type="button" id="agregar_formula" class="boton-secundario">+ Agregar otra fórmula</button>
+    </section>
 
-        <input type="submit" value="Guardar">
+    <div class="acciones">
+        <input type="submit" value="Guardar" class="boton-principal">
+    </div>
 
-    <script src="script.js"></script>
+</main>
+
+<script src="script.js"></script>
 </body>
 </html>
