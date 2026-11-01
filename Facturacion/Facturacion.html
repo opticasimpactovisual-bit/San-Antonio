@@ -4,12 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Facturacion</title>
+    <style>
+        /* Al imprimir no se muestran los botones */
+        @media print {
+            button { display: none; }
+        }
+    </style>
 </head>
-<img src="Imagen/Logo JPG.jpg" alt="Facturacion" width="100%">
+<img src="Imagen/Logo JPG.jpg" alt="Facturacion" width="20%">
 <h1>Centro optico san Antonio</h1>
 <h2>Nit: 40179945-1 Regimen Simplificado</h2>
 <body> 
-    <h3>Accesorios - Monturas - Lentes - Despacho de Fórmulas Av 1 de Mayo No19 C - 09 sur Local A-01 Telefono 2722839 centro comercial Nueva vision Barrio Olaya Bogota DC</h3> 
+    <p>Accesorios - Monturas - Lentes - Despacho de Fórmulas Av 1 de Mayo No19 C - 09 sur Local A-01 Telefono 2722839 centro comercial Nueva vision Barrio Olaya Bogota DC</p>
     <h3>Factura de venta</h3>
     <label for="N_Factura">Nª de factura:
         <input type="text" id="N_Factura" name="Numero de factura" placeholder="Ingrese el numero de factura"><br><br>
@@ -17,11 +23,49 @@
     <label for="fecha">Fecha de venta:
         <input type="date" id="fecha" name="fecha"><br><br>
     </label>
-    <label for="FechaEntrega">Fecha de entrega:
-        <input type="date" id="FechaEntrega" name="FechaEntrega"><br><br>
+    <label for="Total">Total de la venta:
+        $ <input type="text" id="Total" name="Total" inputmode="numeric" placeholder="0"> COP<br><br>
+    </label>
+    <label for="Abono">Abono:
+        $ <input type="text" id="Abono" name="Abono" inputmode="numeric" placeholder="0"> COP<br><br>
+    </label>
+    <label for="Saldo">Saldo:
+        $ <input type="text" id="Saldo" name="Saldo" placeholder="0" readonly> COP<br><br>
     </label>
     <label for="Cliente">Nombre del Cliente:
         <input type="text" id="Cliente" name="Cliente" placeholder="Ingrese el nombre del cliente"><br><br>
     </label>
+    <label for="Tipo_documento">Tipo de documento
+        <select id="Tipo_documento" name="Tipo_documento">
+            <option value="CC">CC</option>
+            <option value="CE">CE</option>
+            <option value="TI">TI</option>
+            <option value="NIT">NIT</option>
+        </select>
+    </label>
+    <label for="Telefono">Teléfono del cliente:
+        <input type="text" id="Telefono" name="Telefono" placeholder="Ingrese el teléfono del cliente"><br><br>
+    </label>
+    <label for="email">Correo del cliente:
+        <input type="email" id="email" name="email" placeholder="Ingrese el correo del cliente"><br><br>
+    </label>
+    <label for="Documento">Documento de identidad:
+        <input type="text" id="Documento" name="Documento" placeholder="Ingrese el documento de identidad"><br><br>
+    </label>
+    <label for="FechaEntrega">Fecha de entrega:
+        <input type="date" id="FechaEntrega" name="FechaEntrega">
+    </label>
+    <label for="HoraEntrega">Hora de entrega:
+        <input type="time" id="HoraEntrega" name="HoraEntrega">
+    </label>
+    <label for="Detalle">Detalle de la entrega:
+        <input type="text" id="Detalle" name="Detalle" placeholder="Ingrese el detalle de la entrega"><br><br>
+    </label>
+    <label for="Vendedor">Nombre del vendedor:
+        <input type="text" id="Vendedor" name="Vendedor" placeholder="Ingrese el nombre del vendedor"><br><br>
+    </label>
+    <button type="button" id="guardar">Guardar Factura</button>
+    <button type="button" id="imprimir">Imprimir Factura</button>   
+    <script src="script.js"></script>
 </body>
 </html>
