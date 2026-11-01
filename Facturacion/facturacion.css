@@ -169,6 +169,10 @@ input[type="date"], input[type="time"], .numero, .pesos input {
 .saldo label { color: var(--verde); }
 .saldo input { font-weight: 500; color: var(--verde); font-size: 18px; border-bottom: 2px solid var(--verde); }
 
+/* Medio de pago: ocupa toda la fila, debajo de Total, Abono y Saldo */
+.medio-pago { grid-column: 1 / -1; }
+.medio-pago select { border-bottom-color: #c6d8cf; }
+
 /* ---------- Productos (tipo tabla) ---------- */
 #productos { border-top: 2px solid var(--tinta); }
 

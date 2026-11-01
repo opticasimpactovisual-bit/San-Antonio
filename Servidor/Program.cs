@@ -36,16 +36,17 @@ app.MapPost("/api/facturas", async (FacturaDto f) =>
         int? idCliente = await GuardarCliente(cn, tx, f.Cliente);
 
         var cmd = new SqlCommand(@"
-            INSERT INTO dbo.facturas (numero_factura, fecha_venta, id_cliente, total, abono,
+            INSERT INTO dbo.facturas (numero_factura, fecha_venta, id_cliente, total, abono, medio_pago,
                                       fecha_entrega, hora_entrega, detalle_entrega, vendedor)
             OUTPUT INSERTED.id_factura
-            VALUES (@numero, @fecha, @cliente, @total, @abono,
+            VALUES (@numero, @fecha, @cliente, @total, @abono, @medioPago,
                     @fechaEntrega, @horaEntrega, @detalle, @vendedor);", cn, tx);
         cmd.Parameters.AddWithValue("@numero", Valor(f.NumeroFactura));
         cmd.Parameters.AddWithValue("@fecha", (object?)f.FechaVenta ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@cliente", (object?)idCliente ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@total", f.Total ?? 0);
         cmd.Parameters.AddWithValue("@abono", f.Abono ?? 0);
+        cmd.Parameters.AddWithValue("@medioPago", Valor(f.MedioPago));
         cmd.Parameters.AddWithValue("@fechaEntrega", (object?)f.FechaEntrega ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@horaEntrega", (object?)f.HoraEntrega?.ToTimeSpan() ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@detalle", Valor(f.DetalleEntrega));
@@ -198,6 +199,7 @@ record FacturaDto(
     DateOnly? FechaVenta,
     decimal? Total,
     decimal? Abono,
+    string? MedioPago,
     ClienteDto? Cliente,
     List<ProductoDto>? Productos,
     DateOnly? FechaEntrega,

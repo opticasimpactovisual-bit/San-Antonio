@@ -57,6 +57,10 @@ CREATE TABLE dbo.facturas (
     total           DECIMAL(12,2) DEFAULT 0,               -- Total
     abono           DECIMAL(12,2) DEFAULT 0,               -- Abono
     saldo           AS (total - abono) PERSISTED,          -- Saldo (se calcula solo)
+    medio_pago      VARCHAR(20)                            -- MedioPago
+                    CONSTRAINT chk_medio_pago CHECK (medio_pago IN (
+                        'Efectivo', 'TC', 'TD', 'Sistecredito', 'ADDI',
+                        'Nequi', 'Daviplata', 'BoldQR')),
 
     -- Entrega
     fecha_entrega   DATE,                                  -- FechaEntrega

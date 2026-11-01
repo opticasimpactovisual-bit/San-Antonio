@@ -43,6 +43,7 @@
                 fechaVenta: valor("fecha"),
                 total: leerPesos(total),
                 abono: leerPesos(abono),
+                medioPago: valor("MedioPago"),
                 cliente: {
                     nombre: valor("Cliente"),
                     tipoDocumento: valor("Tipo_documento"),
@@ -78,9 +79,28 @@
                 }
                 const numero = factura.numeroFactura ? "No. " + factura.numeroFactura + " " : "";
                 alert("Factura " + numero + "guardada en la base de datos (código interno " + datos.idFactura + ").");
+                limpiarFormulario();
             } catch (error) {
                 alert("No hay conexión con el servidor. Inicie el servidor y abra la página en http://localhost:5000");
             }
+        }
+
+        // Deja el formulario vacío para la siguiente factura
+        function limpiarFormulario() {
+            // Quita los productos agregados y deja solo el primero
+            document.querySelectorAll(".producto").forEach(function (grupo, indice) {
+                if (indice > 0) grupo.remove();
+            });
+            contadorProductos = 1;
+
+            document.querySelectorAll("input, textarea").forEach(function (campo) {
+                campo.value = "";
+            });
+            document.querySelectorAll("select").forEach(function (campo) {
+                campo.selectedIndex = 0;
+            });
+
+            window.scrollTo(0, 0);
         }
 
         document.getElementById("guardar").addEventListener("click", guardarFactura);
