@@ -228,6 +228,18 @@ button:focus-visible { outline: 2px solid var(--azul); outline-offset: 2px; }
 .boton-secundario { background: var(--papel); color: var(--verde); border: 1px solid var(--verde); }
 .boton-secundario:hover { background: var(--verde-suave); }
 
+/* Enlace con forma de botón (ir a Fórmulas de clientes) */
+.boton-enlace {
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+}
+
+/* "Agregar otro producto" y "Fórmulas de clientes" lado a lado */
+.botones-productos { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+
 #agregarProducto { justify-self: start; padding: 6px 12px; font-size: 13px; }
 
 .quitar {
@@ -344,7 +356,7 @@ button:focus-visible { outline: 2px solid var(--azul); outline-offset: 2px; }
     body { background: #fff; padding: 0; }
     .buscador { display: none !important; }
     .hoja { box-shadow: none; padding: 0; max-width: none; }
-    button { display: none !important; }
+    button, .boton-enlace { display: none !important; }
     input::placeholder, textarea::placeholder { color: transparent; }
     textarea { border-color: transparent; resize: none; padding: 0; }
     input, select { border-bottom-color: transparent; appearance: none; }

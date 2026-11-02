@@ -177,7 +177,21 @@ button:focus-visible, input[type="submit"]:focus-visible { outline: 2px solid va
 .boton-secundario { background: var(--papel); color: var(--verde); border: 1px solid var(--verde); }
 .boton-secundario:hover { background: var(--verde-suave); }
 
-#agregar_formula { justify-self: start; padding: 6px 12px; font-size: 13px; }
+/* "Agregar otra fórmula" y el enlace "Volver a facturación" con la misma medida exacta */
+#agregar_formula, .boton-enlace {
+    display: inline-block;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.2;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.boton-enlace, .boton-enlace:visited, .boton-enlace:hover { text-decoration: none; color: var(--verde); }
+
+/* "Agregar otra fórmula" y "Volver a facturación" lado a lado */
+.botones-formulas { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
 
 .quitar_formula {
     background: none;
@@ -206,6 +220,16 @@ button:focus-visible, input[type="submit"]:focus-visible { outline: 2px solid va
 }
 .barra-busqueda label { font-weight: 600; color: var(--gris); }
 
+/* Factura encontrada al buscar */
+.factura-encontrada {
+    margin: 8px 0 0;
+    padding: 8px 14px;
+    border-radius: 6px;
+    background: var(--verde-suave);
+    color: var(--verde);
+    font-weight: 600;
+}
+
 /* ---------- Celular ---------- */
 @media (max-width: 640px) {
     .hoja { padding: 20px; }
@@ -222,7 +246,7 @@ button:focus-visible, input[type="submit"]:focus-visible { outline: 2px solid va
     body { background: #fff; padding: 0; }
     .buscador, .acciones { display: none !important; }
     .hoja { box-shadow: none; padding: 0; max-width: none; }
-    button { display: none !important; }
+    button, .boton-enlace { display: none !important; }
     input::placeholder { color: transparent; }
     input { border-bottom-color: transparent; }
     .medidas, .franja {

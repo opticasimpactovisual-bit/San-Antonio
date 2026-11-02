@@ -48,3 +48,6 @@ al conectarse en Management Studio (por ejemplo `FRANCY_GUAUTA\SQLEXPRESS`).
 | `POST /api/facturas` | Guarda una factura con su cliente y sus productos |
 | `GET /api/facturas` | Lista las últimas 50 facturas |
 | `GET /api/facturas/{id}` | Muestra una factura con todos sus productos |
+| `GET /Formulas/Formulas_clientes.html` | Muestra la página de fórmulas de clientes |
+| `GET /api/formulas/factura?numero=..` | Busca una factura por número y trae sus fórmulas |
+| `POST /api/formulas` | Guarda las fórmulas de la página (unidas a la factura, o sin factura) |

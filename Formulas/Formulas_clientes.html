@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
-    <link rel="stylesheet" href="Formulas.css">
+    <link rel="stylesheet" href="Formulas.css?v=3">
 </head>
 <body>
 
@@ -16,8 +16,9 @@
     <div class="barra-busqueda">
         <label for="numero_factura">Número de factura</label>
         <input type="text" id="numero_factura" name="numero_factura" placeholder="Ingrese el número de factura">
-        <input type="submit" value="Buscar" class="boton-principal">
+        <input type="submit" value="Buscar" id="buscar" class="boton-principal">
     </div>
+    <p id="factura_encontrada" class="factura-encontrada" hidden></p>
 </div>
 
 <main class="hoja">
@@ -90,15 +91,18 @@
             </div>
         </div>
 
-        <button type="button" id="agregar_formula" class="boton-secundario">+ Agregar otra fórmula</button>
+        <div class="botones-formulas">
+            <button type="button" id="agregar_formula" class="boton-secundario">+ Agregar otra fórmula</button>
+            <a href="../Facturacion/Facturacion.html" class="boton-secundario boton-enlace">Volver a facturación</a>
+        </div>
     </section>
 
     <div class="acciones">
-        <input type="submit" value="Guardar" class="boton-principal">
+        <input type="submit" value="Guardar" id="guardar" class="boton-principal">
     </div>
 
 </main>
 
-<script src="script.js"></script>
+<script src="script.js?v=2"></script>
 </body>
 </html>

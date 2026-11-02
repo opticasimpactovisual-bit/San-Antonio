@@ -6,6 +6,8 @@
 //   GET  /api/facturas                  lista las últimas 50 facturas
 //   GET  /api/facturas/buscar?texto=..  busca por número de factura, documento o nombre
 //   GET  /api/facturas/{id}             muestra una factura con todos sus productos
+//   GET  /api/formulas/factura?numero=.. busca una factura por número y trae sus fórmulas
+//   POST /api/formulas                  guarda las fórmulas de la página Formulas_clientes.html
 
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.FileProviders;
@@ -24,6 +26,16 @@ paginaInicio.DefaultFileNames.Clear();
 paginaInicio.DefaultFileNames.Add("Facturacion.html");
 app.UseDefaultFiles(paginaInicio);
 app.UseStaticFiles(new StaticFileOptions { FileProvider = carpetaPagina });
+
+// La página de fórmulas (carpeta Formulas) se abre en /Formulas/Formulas_clientes.html.
+// Facturacion también queda en /Facturacion para que la página de fórmulas encuentre el logo.
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", "Formulas"))),
+    RequestPath = "/Formulas"
+});
+app.UseStaticFiles(new StaticFileOptions { FileProvider = carpetaPagina, RequestPath = "/Facturacion" });
 
 
 // ---------- Guardar una factura nueva ----------
@@ -175,6 +187,104 @@ app.MapGet("/api/facturas/{id:int}", async (int id) =>
     return Results.Ok(factura);
 });
 
+
+// ---------- Buscar una factura por número y traer sus fórmulas ----------
+// El número de factura se puede repetir: se toma la más reciente.
+app.MapGet("/api/formulas/factura", async (string? numero) =>
+{
+    if (string.IsNullOrWhiteSpace(numero))
+        return Results.BadRequest(new { mensaje = "Escriba el número de factura." });
+
+    await using var cn = new SqlConnection(conexion);
+    await cn.OpenAsync();
+
+    var cmd = new SqlCommand(@"
+        SELECT TOP 1 f.id_factura, f.numero_factura, f.fecha_venta, c.nombre AS cliente
+        FROM dbo.facturas f
+        LEFT JOIN dbo.clientes c ON c.id_cliente = f.id_cliente
+        WHERE f.numero_factura = @numero
+        ORDER BY f.id_factura DESC;", cn);
+    cmd.Parameters.AddWithValue("@numero", numero.Trim());
+    var factura = (await LeerFilas(cmd)).FirstOrDefault();
+    if (factura is null)
+        return Results.NotFound(new { mensaje = "No existe la factura No. " + numero.Trim() + "." });
+
+    var cmdFormulas = new SqlCommand(
+        "SELECT * FROM dbo.formulas WHERE id_factura = @id ORDER BY id_formula;", cn);
+    cmdFormulas.Parameters.AddWithValue("@id", factura["id_factura"]);
+    factura["formulas"] = await LeerFilas(cmdFormulas);
+
+    return Results.Ok(factura);
+});
+
+
+// ---------- Guardar las fórmulas de la página ----------
+//   IdFactura lleno      -> la factura se buscó: sus fórmulas se reemplazan por las del formulario
+//   solo NumeroFactura   -> se busca la factura y las fórmulas se agregan a las que ya tenga
+//   ninguno de los dos   -> las fórmulas se guardan sin factura
+app.MapPost("/api/formulas", async (GuardarFormulasDto d) =>
+{
+    try
+    {
+        await using var cn = new SqlConnection(conexion);
+        await cn.OpenAsync();
+        await using var tx = (SqlTransaction)await cn.BeginTransactionAsync();
+
+        int? idFactura = d.IdFactura;
+        if (idFactura is not null)
+        {
+            var borrar = new SqlCommand("DELETE FROM dbo.formulas WHERE id_factura = @id;", cn, tx);
+            borrar.Parameters.AddWithValue("@id", idFactura);
+            await borrar.ExecuteNonQueryAsync();
+        }
+        else if (!string.IsNullOrWhiteSpace(d.NumeroFactura))
+        {
+            var buscar = new SqlCommand(@"
+                SELECT TOP 1 id_factura FROM dbo.facturas
+                WHERE numero_factura = @numero ORDER BY id_factura DESC;", cn, tx);
+            buscar.Parameters.AddWithValue("@numero", d.NumeroFactura.Trim());
+            idFactura = await buscar.ExecuteScalarAsync() as int?;
+            if (idFactura is null)
+                return Results.NotFound(new { mensaje = "No existe la factura No. " + d.NumeroFactura.Trim()
+                    + ". Revise el número, o déjelo vacío para guardar las fórmulas sin factura." });
+        }
+
+        int guardadas = 0;
+        foreach (var fo in d.Formulas ?? [])
+        {
+            var cmd = new SqlCommand(@"
+                INSERT INTO dbo.formulas (id_factura, nombre_cliente, ojo_derecho, ojo_izquierdo, adicion,
+                                          distancia, altura, tipo_lente, tipo_montura, doctor,
+                                          fecha_entrega, hora_entrega)
+                VALUES (@factura, @nombre, @od, @oi, @adicion,
+                        @distancia, @altura, @lente, @montura, @doctor,
+                        @fechaEntrega, @horaEntrega);", cn, tx);
+            cmd.Parameters.AddWithValue("@factura", (object?)idFactura ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@nombre", Valor(fo.NombreCliente));
+            cmd.Parameters.AddWithValue("@od", Valor(fo.OjoDerecho));
+            cmd.Parameters.AddWithValue("@oi", Valor(fo.OjoIzquierdo));
+            cmd.Parameters.AddWithValue("@adicion", Valor(fo.Adicion));
+            cmd.Parameters.AddWithValue("@distancia", Valor(fo.Distancia));
+            cmd.Parameters.AddWithValue("@altura", Valor(fo.Altura));
+            cmd.Parameters.AddWithValue("@lente", Valor(fo.TipoLente));
+            cmd.Parameters.AddWithValue("@montura", Valor(fo.TipoMontura));
+            cmd.Parameters.AddWithValue("@doctor", Valor(fo.Doctor));
+            cmd.Parameters.AddWithValue("@fechaEntrega", (object?)fo.FechaEntrega ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@horaEntrega", (object?)fo.HoraEntrega?.ToTimeSpan() ?? DBNull.Value);
+            await cmd.ExecuteNonQueryAsync();
+            guardadas++;
+        }
+
+        await tx.CommitAsync();
+        return Results.Ok(new { idFactura, guardadas });
+    }
+    catch (SqlException ex)
+    {
+        app.Logger.LogError(ex, "Error de SQL Server al guardar las fórmulas");
+        return Results.Json(new { mensaje = "No se pudo guardar en SQL Server: " + ex.Message }, statusCode: 500);
+    }
+});
+
 app.Run();
 
 
@@ -256,3 +366,18 @@ record FacturaDto(
     TimeOnly? HoraEntrega,
     string? DetalleEntrega,
     string? Vendedor);
+
+record FormulaDto(
+    string? NombreCliente,
+    string? OjoDerecho,
+    string? OjoIzquierdo,
+    string? Adicion,
+    string? Distancia,
+    string? Altura,
+    string? TipoLente,
+    string? TipoMontura,
+    string? Doctor,
+    DateOnly? FechaEntrega,
+    TimeOnly? HoraEntrega);
+
+record GuardarFormulasDto(int? IdFactura, string? NumeroFactura, List<FormulaDto>? Formulas);
