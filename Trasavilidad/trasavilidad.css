@@ -136,7 +136,7 @@ input[type="text"]:focus, input[type="date"]:focus {
 }
 
 /* Números, fechas y medidas en letra de máquina */
-input[type="date"], #numero_orden,
+input[type="date"], input[id^="numero_orden"],
 input[id^="prescripcion_"], input[id^="lensometria_"], input[id^="invima_"], input[id^="lote_"] {
     font-family: var(--letra-numeros);
     font-variant-numeric: tabular-nums;
@@ -214,7 +214,13 @@ button:focus-visible { outline: 2px solid var(--azul); outline-offset: 2px; }
 .boton-secundario { background: var(--papel); color: var(--verde); border: 1px solid var(--verde); }
 .boton-secundario:hover { background: var(--verde-suave); }
 
-.acciones { display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap; }
+.acciones { display: flex; gap: 12px; justify-content: flex-end; align-items: center; flex-wrap: wrap; }
+.acciones label { margin-left: 12px; color: var(--gris); }
+.acciones input { width: 120px; }
+.acciones input::placeholder { color: #a7b5ae; }
+
+/* La segunda planilla solo existe al imprimir dos registros en una hoja */
+.planilla.segunda { display: none; }
 
 /* ---------- Buscar planilla (encima de la hoja) ---------- */
 .buscador {
@@ -283,10 +289,12 @@ footer p { margin: 0; }
 }
 
 /* ---------- Impresión ---------- */
-@page { size: landscape; margin: 12mm; }
+/* Sin margen de página el navegador no pone fecha, título, dirección ni número de página;
+   el espacio alrededor de la hoja lo da el padding del body */
+@page { size: landscape; margin: 0; }
 
 @media print {
-    body { background: #fff; padding: 0; }
+    body { background: #fff; padding: 12mm; }
     .hoja { box-shadow: none; padding: 0; max-width: none; gap: 16px; }
     .acciones, .buscador { display: none; }
     input::-webkit-calendar-picker-indicator { display: none; }
@@ -299,4 +307,28 @@ footer p { margin: 0; }
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }
+
+    /* Dos registros en una hoja: todo un poco más compacto para que quepan */
+    .dos-registros { padding: 8mm 12mm; }
+    .dos-registros .planilla.segunda { display: grid; }
+    .dos-registros .hoja { gap: 14px; }
+    .dos-registros .encabezado { align-items: center; }
+    .dos-registros .logo { max-width: 190px; }
+    .dos-registros .encabezado h1 { margin-top: 4px; font-size: 11px; }
+    .dos-registros .encabezado h2 { font-size: 11px; }
+    .dos-registros .encabezado p { font-size: 16px; }
+    .dos-registros .franja { height: 4px; }
+    .dos-registros .planilla { gap: 8px; font-size: 13px; break-inside: avoid; }
+    .dos-registros .titulo { font-size: 10px; }
+    .dos-registros .fila-orden { gap: 12px; }
+    .dos-registros .fila-detalle { gap: 16px; padding: 10px 14px; }
+    .dos-registros .grupo { gap: 2px; }
+    .dos-registros .grupo > .titulo:not(:first-child) { margin-top: 6px; }
+    .dos-registros .grupo > p.titulo + .titulo { margin-top: 2px; }
+    .dos-registros .columna { gap: 6px; }
+    .dos-registros input[type="text"], .dos-registros input[type="date"] { padding: 2px; }
+    .dos-registros textarea { min-height: 2.6em; padding: 2px 6px; }
+    .dos-registros .opciones { margin-top: 3px; }
+    .dos-registros .espacio-firma { min-height: 50px; margin-top: 2px; }
+    .dos-registros footer { margin-top: 10px; font-size: 11px; }
 }

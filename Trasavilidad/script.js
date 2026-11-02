@@ -11,6 +11,7 @@ const resultados = document.getElementById("resultados");
 const planillaCargada = document.getElementById("planilla_cargada");
 const avisoFactura = document.getElementById("aviso_factura");
 const numeroOrden = document.getElementById("numero_orden");
+const segundaOrden = document.getElementById("segunda_orden");
 const planilla = document.querySelector(".planilla");
 
 // Cada campo de la planilla tiene como id el nombre de su columna en SQL Server
@@ -48,15 +49,20 @@ function limpiarPlanilla() {
     resultados.hidden = true;
 }
 
-function cargarPlanilla(fila) {
-    camposTexto.forEach(function (campo) {
+// Pasa una fila de SQL Server a los campos de una planilla
+function escribirFila(raiz, fila) {
+    raiz.querySelectorAll("input[id], textarea").forEach(function (campo) {
         const texto = fila[campo.id] || "";
         campo.value = campo.type === "date" ? texto.substring(0, 10) : texto;
     });
     // La columna guarda true (Si), false (No) o null (sin marcar)
-    opciones.forEach(function (opcion) {
+    raiz.querySelectorAll("input[type='radio']").forEach(function (opcion) {
         opcion.checked = fila[opcion.name] === (opcion.value === "si");
     });
+}
+
+function cargarPlanilla(fila) {
+    escribirFila(planilla, fila);
     idGuardado = fila.id_trazabilidad;
     hayCambios = false;
     resultados.hidden = true;
@@ -80,16 +86,20 @@ function mostrarLista(titulo, elementos) {
     resultados.hidden = false;
 }
 
+function textoPlanilla(fila) {
+    return [
+        "Orden " + fila.numero_orden,
+        fila.nombre_paciente,
+        fechaCorta(fila.fecha_adquirencia),
+        "guardada el " + fechaCorta(fila.creado_en)
+    ].filter(Boolean).join(" · ");
+}
+
 // Con varias planillas del mismo N° de orden se muestra la lista para elegir
 function mostrarResultados(filas) {
     mostrarLista(filas.length + " planillas con este N° de orden. Elija una:", filas.map(function (fila) {
         return {
-            texto: [
-                "Orden " + fila.numero_orden,
-                fila.nombre_paciente,
-                fechaCorta(fila.fecha_adquirencia),
-                "guardada el " + fechaCorta(fila.creado_en)
-            ].filter(Boolean).join(" · "),
+            texto: textoPlanilla(fila),
             alElegir: function () {
                 if (sePuedeReemplazar()) cargarPlanilla(fila);
             }
@@ -119,7 +129,8 @@ function aplicarFactura(factura, formula) {
         prescripcion_od: f.ojo_derecho || "",
         prescripcion_oi: f.ojo_izquierdo || "",
         prescripcion_add: f.adicion || "",
-        material: lenteDeFactura(factura, formula)
+        material: lenteDeFactura(factura, formula),
+        montura: f.tipo_montura || ""
     };
 
     const ids = Object.keys(datos);
@@ -218,6 +229,7 @@ document.getElementById("nueva").addEventListener("click", function () {
     if (!sePuedeReemplazar()) return;
     limpiarPlanilla();
     buscarOrden.value = "";
+    segundaOrden.value = "";
     window.scrollTo(0, 0);
 });
 
@@ -289,7 +301,68 @@ async function guardarPlanilla() {
 
 document.getElementById("guardar").addEventListener("click", guardarPlanilla);
 
-// Abre la ventana de impresión del navegador (también permite guardar como PDF)
-document.getElementById("imprimir").addEventListener("click", function () {
+// Quita la copia de la segunda planilla: en pantalla solo se ve una
+function quitarSegundaPlanilla() {
+    const copia = document.querySelector(".planilla.segunda");
+    if (copia) copia.remove();
+    document.body.classList.remove("dos-registros");
+}
+
+// Imprime la planilla de la pantalla y debajo una copia con los datos de otra ya guardada
+function imprimirDos(fila) {
+    quitarSegundaPlanilla();
+    const copia = planilla.cloneNode(true);
+    copia.classList.add("segunda");
+    escribirFila(copia, fila);
+
+    // Sin ids ni nombres repetidos, para que la copia no afecte los campos de la pantalla
+    copia.querySelectorAll("[id]").forEach(function (elemento) { elemento.id += "_2"; });
+    copia.querySelectorAll("[for]").forEach(function (elemento) { elemento.removeAttribute("for"); });
+    copia.querySelectorAll("[name]").forEach(function (elemento) { elemento.removeAttribute("name"); });
+
+    planilla.after(copia);
+    document.body.classList.add("dos-registros");
     window.print();
-});
+}
+
+// Abre la ventana de impresión del navegador (también permite guardar como PDF).
+// Si se escribió otra orden, salen las dos planillas en la misma hoja.
+async function imprimir() {
+    const orden = segundaOrden.value.trim();
+    if (!orden) {
+        window.print();
+        return;
+    }
+
+    let filas;
+    try {
+        const respuesta = await fetch("/api/trazabilidad/buscar?orden=" + encodeURIComponent(orden));
+        filas = await respuesta.json();
+    } catch (error) {
+        alert(sinServidor);
+        return;
+    }
+
+    // La planilla abierta ya sale arriba: no se repite abajo
+    filas = filas.filter(function (fila) { return fila.id_trazabilidad !== idGuardado; });
+
+    if (filas.length === 0) {
+        alert("No hay otra planilla guardada con el N° de orden " + orden + ".");
+    } else if (filas.length === 1) {
+        imprimirDos(filas[0]);
+    } else {
+        mostrarLista(filas.length + " planillas con el N° de orden " + orden + ". Elija cuál imprimir:", filas.map(function (fila) {
+            return {
+                texto: textoPlanilla(fila),
+                alElegir: function () {
+                    resultados.hidden = true;
+                    imprimirDos(fila);
+                }
+            };
+        }));
+        window.scrollTo(0, 0);
+    }
+}
+
+document.getElementById("imprimir").addEventListener("click", imprimir);
+window.addEventListener("afterprint", quitarSegundaPlanilla);
