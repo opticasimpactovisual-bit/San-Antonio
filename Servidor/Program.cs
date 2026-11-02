@@ -6,6 +6,7 @@
 //   GET  /api/facturas                  lista las últimas 50 facturas
 //   GET  /api/facturas/buscar?texto=..  busca por número de factura, documento o nombre
 //   GET  /api/facturas/{id}             muestra una factura con todos sus productos
+//   DELETE /api/facturas/{id}           elimina una factura con sus productos y fórmulas
 //   GET  /api/formulas/factura?numero=.. busca una factura por número y trae sus fórmulas
 //   POST /api/formulas                  guarda las fórmulas de la página Formulas_clientes.html
 
@@ -185,6 +186,20 @@ app.MapGet("/api/facturas/{id:int}", async (int id) =>
     factura["productos"] = await LeerFilas(cmdProductos);
 
     return Results.Ok(factura);
+});
+
+
+// ---------- Eliminar una factura ----------
+// Sus productos y sus fórmulas se borran solos (ON DELETE CASCADE). El cliente no se borra.
+app.MapDelete("/api/facturas/{id:int}", async (int id) =>
+{
+    await using var cn = new SqlConnection(conexion);
+    await cn.OpenAsync();
+    var cmd = new SqlCommand("DELETE FROM dbo.facturas WHERE id_factura = @id;", cn);
+    cmd.Parameters.AddWithValue("@id", id);
+    return await cmd.ExecuteNonQueryAsync() == 0
+        ? Results.NotFound(new { mensaje = "No existe la factura " + id })
+        : Results.Ok(new { mensaje = "Factura eliminada." });
 });
 
 

@@ -167,6 +167,7 @@
             lista.forEach(function (f) {
                 const boton = document.createElement("button");
                 boton.type = "button";
+                boton.className = "abrir";
                 const partes = [
                     ["num", "No. " + (f.numero_factura || "—")],
                     ["fec", fechaCorta(f.fecha_venta)],
@@ -182,11 +183,47 @@
                 boton.addEventListener("click", function () {
                     cargarFactura(f.id_factura);
                 });
+                const eliminar = document.createElement("button");
+                eliminar.type = "button";
+                eliminar.className = "eliminar";
+                eliminar.textContent = "Eliminar";
+                eliminar.addEventListener("click", function () {
+                    eliminarFactura(f, li);
+                });
+
                 const li = document.createElement("li");
                 li.appendChild(boton);
+                li.appendChild(eliminar);
                 resultados.appendChild(li);
             });
             resultados.hidden = false;
+        }
+
+        // Borra la factura de SQL Server después de confirmar. También se borran sus productos y fórmulas.
+        async function eliminarFactura(f, li) {
+            const nombre = "No. " + (f.numero_factura || "—") + (f.cliente ? " de " + f.cliente : "");
+            if (!confirm("¿Eliminar la factura " + nombre + "?\n\nTambién se borran sus productos y sus fórmulas. Esto no se puede deshacer.")) {
+                return;
+            }
+
+            try {
+                const respuesta = await fetch("/api/facturas/" + f.id_factura, { method: "DELETE" });
+                const datos = await respuesta.json();
+                if (!respuesta.ok) {
+                    alert("No se eliminó la factura. " + datos.mensaje);
+                    return;
+                }
+            } catch (error) {
+                alert("No hay conexión con el servidor. Inicie el servidor y abra la página en http://localhost:5000");
+                return;
+            }
+
+            // Si era la factura que se estaba editando, el formulario vuelve a factura nueva
+            if (idFacturaEditando === f.id_factura) limpiarFormulario();
+
+            li.remove();
+            if (!resultados.querySelector("li")) resultados.hidden = true;
+            alert("Factura " + nombre + " eliminada.");
         }
 
         // Trae la factura del servidor y la pone en el formulario para editarla

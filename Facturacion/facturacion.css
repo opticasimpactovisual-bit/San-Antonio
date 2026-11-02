@@ -306,8 +306,11 @@ button:focus-visible { outline: 2px solid var(--azul); outline-offset: 2px; }
     overflow-y: auto;
 }
 #resultados li + li { border-top: 1px solid var(--linea); }
-#resultados button {
-    width: 100%;
+/* Cada resultado: la factura (para abrirla) y a la derecha el botón Eliminar */
+#resultados li { display: flex; align-items: center; }
+#resultados .abrir {
+    flex: 1;
+    min-width: 0;
     display: grid;
     grid-template-columns: 9ch 11ch 1fr auto;
     gap: 12px;
@@ -319,7 +322,16 @@ button:focus-visible { outline: 2px solid var(--azul); outline-offset: 2px; }
     color: var(--tinta);
     padding: 10px 14px;
 }
-#resultados button:hover { background: var(--verde-suave); }
+#resultados .abrir:hover { background: var(--verde-suave); }
+#resultados .eliminar {
+    margin: 0 10px;
+    padding: 5px 10px;
+    font-size: 13px;
+    background: var(--papel);
+    color: #b3261e;
+    border: 1px solid #b3261e;
+}
+#resultados .eliminar:hover { background: #fdecea; }
 #resultados .num { font-family: var(--letra-numeros); font-weight: 500; color: var(--verde); }
 #resultados .fec, #resultados .val { font-family: var(--letra-numeros); color: var(--gris); }
 #resultados .vacio { padding: 10px 14px; color: var(--gris); }
@@ -348,7 +360,7 @@ button:focus-visible { outline: 2px solid var(--azul); outline-offset: 2px; }
     .producto { grid-template-columns: 1fr 1fr; }
     .barra-busqueda { grid-template-columns: 1fr auto; }
     .barra-busqueda label { grid-column: 1 / -1; }
-    #resultados button { grid-template-columns: 1fr 1fr; }
+    #resultados .abrir { grid-template-columns: 1fr 1fr; }
 }
 
 /* ---------- Impresión ---------- */
