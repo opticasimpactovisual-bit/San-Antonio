@@ -1,0 +1,302 @@
+/* Colores y letras de la factura (tomados del logo) */
+:root {
+    --fondo: #e4ece8;      /* escritorio alrededor de la hoja */
+    --papel: #ffffff;
+    --tinta: #1d2b25;      /* texto principal */
+    --gris: #5f6f68;       /* textos secundarios */
+    --linea: #d5e0db;
+    --linea-verde: #c6d8cf; /* líneas dentro del cuadro verde */
+    --verde: #1f7a2e;
+    --azul: #1aa3a8;
+    --verde-suave: #eef6f1;
+
+    --letra-titulo: "Nunito", "Trebuchet MS", sans-serif;
+    --letra-texto: "Source Sans 3", "Segoe UI", sans-serif;
+    --letra-numeros: "IBM Plex Mono", Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+body {
+    margin: 0;
+    padding: 28px 16px 48px;
+    background: var(--fondo);
+    color: var(--tinta);
+    font-family: var(--letra-texto);
+    font-size: 14px;
+}
+
+/* La hoja blanca, más ancha que la factura porque la planilla va horizontal */
+.hoja {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 48px;
+    background: var(--papel);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 12px 32px rgba(20, 50, 35, .14);
+    display: grid;
+    gap: 28px;
+}
+
+/* ---------- Encabezado: datos del negocio a la izquierda, título a la derecha ---------- */
+.encabezado {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 24px;
+    align-items: start;
+}
+.encabezado > :not(p) { grid-column: 1; }
+
+.logo { width: 100%; max-width: 330px; height: auto; display: block; }
+
+.encabezado h1 {
+    margin: 10px 0 0;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+.encabezado h2 { margin: 0; font-size: 13px; font-weight: 400; color: var(--gris); }
+
+.encabezado p {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    margin: 0;
+    text-align: right;
+    font-family: var(--letra-titulo);
+    font-size: 22px;
+    font-weight: 900;
+    line-height: 1.25;
+    color: var(--verde);
+}
+
+/* Franja de colores bajo el encabezado */
+.franja {
+    height: 6px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--azul), var(--verde));
+}
+
+/* ---------- Planilla ---------- */
+.planilla { display: grid; gap: 20px; }
+
+.fila-orden {
+    display: grid;
+    grid-template-columns: .7fr 1.6fr 3fr 1.6fr 2.4fr;
+    gap: 16px;
+}
+
+/* Segunda fila dentro de un cuadro verde, como los valores de la factura */
+.fila-detalle {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr 1.2fr 1fr 1.7fr;
+    gap: 20px;
+    background: var(--verde-suave);
+    border-radius: 6px;
+    padding: 16px;
+}
+
+.grupo { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+
+.columna { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.columna > .grupo { flex: 1; }
+
+/* Títulos pequeños: ORDEN, OD, MATERIAL... */
+.titulo {
+    display: block;
+    margin: 0;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--gris);
+}
+.grupo > .titulo:not(:first-child) { margin-top: 10px; }
+
+/* Títulos de cada bloque en verde, como SALDO en la factura */
+p.titulo { color: var(--verde); }
+.grupo > p.titulo + .titulo { margin-top: 6px; }
+
+/* ---------- Campos ---------- */
+input[type="text"], input[type="date"] {
+    font: inherit;
+    color: var(--tinta);
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--linea);
+    padding: 4px 2px;
+    min-width: 0;
+    width: 100%;
+}
+.fila-detalle input[type="text"], .fila-detalle input[type="date"] { border-bottom-color: var(--linea-verde); }
+
+input[type="text"]:focus, input[type="date"]:focus {
+    outline: none;
+    border-bottom-color: var(--verde);
+    background: var(--verde-suave);
+}
+
+/* Números, fechas y medidas en letra de máquina */
+input[type="date"], #numero_orden,
+input[id^="prescripcion_"], input[id^="lensometria_"], input[id^="invima_"], input[id^="lote_"] {
+    font-family: var(--letra-numeros);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Material ocupa el espacio que sobra en su columna */
+textarea {
+    flex: 1;
+    font: inherit;
+    color: var(--tinta);
+    width: 100%;
+    min-height: 3.2em;
+    padding: 6px 8px;
+    border: 1px solid var(--linea-verde);
+    border-radius: 4px;
+    background: transparent;
+    line-height: 1.45;
+    resize: none;
+}
+textarea:focus { outline: none; border-color: var(--verde); }
+
+/* ---------- Aprobado y Devolución ---------- */
+.decisiones { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+.opciones { display: flex; gap: 14px; margin-top: 8px; }
+.opciones label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+
+/* Radios cuadrados: se elige solo uno entre Si y No */
+input[type="radio"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 15px;
+    height: 15px;
+    margin: 0;
+    border: 1px solid var(--gris);
+    border-radius: 3px;
+    background: var(--papel);
+    display: grid;
+    place-content: center;
+    cursor: pointer;
+}
+input[type="radio"]:checked { border-color: var(--verde); background: var(--verde); }
+input[type="radio"]:checked::before {
+    content: "✓";
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    color: #fff;
+}
+input[type="radio"]:focus-visible { outline: 2px solid var(--azul); outline-offset: 2px; }
+
+/* Espacio blanco para firmar y sellar sobre el cuadro verde */
+.espacio-firma {
+    flex: 1;
+    min-height: 70px;
+    margin-top: 4px;
+    background: var(--papel);
+    border: 1px solid var(--linea-verde);
+    border-radius: 4px;
+}
+
+/* ---------- Botones ---------- */
+button {
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 6px;
+    padding: 8px 16px;
+}
+button:focus-visible { outline: 2px solid var(--azul); outline-offset: 2px; }
+
+.boton-principal { background: var(--verde); color: #fff; border: 1px solid var(--verde); }
+.boton-principal:hover { background: #18631f; }
+
+.boton-secundario { background: var(--papel); color: var(--verde); border: 1px solid var(--verde); }
+.boton-secundario:hover { background: var(--verde-suave); }
+
+.acciones { display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap; }
+
+/* ---------- Buscar planilla (encima de la hoja) ---------- */
+.buscador {
+    max-width: 1120px;
+    margin: 0 auto 16px;
+}
+.barra-busqueda {
+    display: grid;
+    grid-template-columns: max-content 1fr auto auto;
+    gap: 12px;
+    align-items: center;
+    background: var(--papel);
+    border-radius: 6px;
+    padding: 10px 14px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .08);
+}
+.barra-busqueda label { font-weight: 600; color: var(--gris); }
+.barra-busqueda input::placeholder { color: #a7b5ae; }
+
+/* Lista para elegir cuando varias planillas tienen el mismo N° de orden */
+.resultados {
+    display: grid;
+    gap: 4px;
+    margin-top: 8px;
+    padding: 10px 14px;
+    background: var(--papel);
+    border-radius: 6px;
+}
+.resultados p { margin: 0 0 4px; font-weight: 600; color: var(--gris); }
+.resultados button {
+    text-align: left;
+    font-weight: 400;
+    padding: 6px 8px;
+    background: none;
+    border: 1px solid var(--linea);
+}
+.resultados button:hover { background: var(--verde-suave); }
+
+/* Planilla abierta: al guardar se actualiza esa misma */
+.planilla-cargada {
+    margin: 8px 0 0;
+    padding: 8px 14px;
+    border-radius: 6px;
+    background: var(--verde-suave);
+    color: var(--verde);
+    font-weight: 600;
+}
+
+/* ---------- Pie de página ---------- */
+footer { margin-top: 16px; text-align: center; font-size: 13px; color: var(--gris); }
+footer p { margin: 0; }
+
+/* ---------- Pantallas pequeñas ---------- */
+@media (max-width: 960px) {
+    .fila-orden, .fila-detalle { grid-template-columns: 1fr 1fr; }
+    .hoja { padding: 24px; }
+}
+
+@media (max-width: 640px) {
+    .hoja { padding: 20px; }
+    .encabezado { grid-template-columns: 1fr; }
+    .encabezado p { grid-column: 1; grid-row: auto; margin-top: 12px; text-align: left; }
+    .fila-orden, .fila-detalle { grid-template-columns: 1fr; }
+    .barra-busqueda { grid-template-columns: 1fr 1fr; }
+    .barra-busqueda label, .barra-busqueda input { grid-column: 1 / -1; }
+}
+
+/* ---------- Impresión ---------- */
+@page { size: landscape; margin: 12mm; }
+
+@media print {
+    body { background: #fff; padding: 0; }
+    .hoja { box-shadow: none; padding: 0; max-width: none; gap: 16px; }
+    .acciones, .buscador { display: none; }
+    input::-webkit-calendar-picker-indicator { display: none; }
+
+    /* Mantiene las cinco columnas aunque la hoja impresa sea angosta */
+    .fila-orden { grid-template-columns: .7fr 1.6fr 3fr 1.6fr 2.4fr; }
+    .fila-detalle { grid-template-columns: 1fr 1.4fr 1.2fr 1fr 1.7fr; }
+
+    .fila-detalle, .franja, input[type="radio"]:checked {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}

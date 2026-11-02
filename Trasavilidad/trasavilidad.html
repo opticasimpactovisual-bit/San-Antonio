@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <title>Trasavilidad</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+        <link rel="stylesheet" href="trasavilidad.css?v=3">
+    </head>
+    <body>
+
+    <!-- Buscar una planilla anterior para verla o corregirla (no sale al imprimir) -->
+    <div class="buscador">
+        <div class="barra-busqueda">
+            <label for="buscar_orden">N° de orden</label>
+            <input type="text" id="buscar_orden" placeholder="Ingrese el número de orden">
+            <button type="button" id="buscar" class="boton-principal">Buscar</button>
+            <button type="button" id="nueva" class="boton-secundario">Nueva planilla</button>
+        </div>
+        <div id="resultados" class="resultados" hidden></div>
+        <p id="planilla_cargada" class="planilla-cargada" hidden></p>
+        <p id="aviso_factura" class="planilla-cargada" hidden></p>
+    </div>
+
+    <main class="hoja">
+
+        <header class="encabezado">
+            <img src="../Facturacion/Imagen/Logo%20JPG.jpg" alt="Centro Óptico San Antonio" class="logo">
+            <h1>Centro optico san Antonio</h1>
+            <h2>Nit: 40179945-1 Regimen Simplificado</h2>
+            <p>Planilla de Trasabilidad de calida de dispositivo medicos sobre medida para la salud visual y ocular</p>
+        </header>
+
+        <div class="franja"></div>
+
+        <section class="planilla">
+
+            <!-- Primera fila: datos de la orden -->
+            <div class="fila-orden">
+                <div class="grupo">
+                    <label for="numero_orden" class="titulo">N° Orden</label>
+                    <input type="text" id="numero_orden" name="numero_orden">
+                </div>
+                <div class="grupo">
+                    <label for="fecha_adquirencia" class="titulo">Fecha de adquirencia</label>
+                    <input type="date" id="fecha_adquirencia" name="fecha_adquirencia">
+                </div>
+                <div class="grupo">
+                    <label for="nombre_paciente" class="titulo">Nombre paciente</label>
+                    <input type="text" id="nombre_paciente" name="nombre_paciente">
+                </div>
+                <div class="grupo">
+                    <label for="proveedor" class="titulo">Proveedor</label>
+                    <input type="text" id="proveedor" name="proveedor">
+                </div>
+                <div class="grupo">
+                    <label for="fecha_envio" class="titulo">Fecha de envío al laboratorio</label>
+                    <input type="date" id="fecha_envio" name="fecha_envio">
+                </div>
+            </div>
+
+            <!-- Segunda fila: cinco columnas -->
+            <div class="fila-detalle">
+
+                <div class="grupo">
+                    <p class="titulo">Prescripción</p>
+                    <label for="prescripcion_od" class="titulo">OD</label>
+                    <input type="text" id="prescripcion_od" name="prescripcion_od">
+                    <label for="prescripcion_oi" class="titulo">OI</label>
+                    <input type="text" id="prescripcion_oi" name="prescripcion_oi">
+                    <label for="prescripcion_add" class="titulo">ADD</label>
+                    <input type="text" id="prescripcion_add" name="prescripcion_add">
+                </div>
+
+                <div class="grupo">
+                    <label for="fecha_llegada" class="titulo">Fecha de llegada</label>
+                    <input type="date" id="fecha_llegada" name="fecha_llegada">
+                    <label for="material" class="titulo">Material</label>
+                    <textarea id="material" name="material" rows="2"></textarea>
+                    <label for="montura" class="titulo">Montura</label>
+                    <input type="text" id="montura" name="montura">
+                </div>
+
+                <div class="columna">
+                    <div class="grupo">
+                        <label for="invima_1" class="titulo">N° INVIMA</label>
+                        <input type="text" id="invima_1" name="invima_1">
+                        <input type="text" id="invima_2" name="invima_2" aria-label="N° INVIMA, segundo registro">
+                    </div>
+                    <div class="grupo">
+                        <label for="lote_1" class="titulo">N° Lote</label>
+                        <input type="text" id="lote_1" name="lote_1">
+                        <input type="text" id="lote_2" name="lote_2" aria-label="N° Lote, segundo registro">
+                    </div>
+                </div>
+
+                <div class="grupo">
+                    <p class="titulo">Lensometría</p>
+                    <label for="lensometria_od" class="titulo">Lensometría OD</label>
+                    <input type="text" id="lensometria_od" name="lensometria_od">
+                    <label for="lensometria_oi" class="titulo">Lensometría OI</label>
+                    <input type="text" id="lensometria_oi" name="lensometria_oi">
+                    <label for="lensometria_add" class="titulo">Lensometría ADD</label>
+                    <input type="text" id="lensometria_add" name="lensometria_add">
+                </div>
+
+                <div class="columna">
+                    <div class="decisiones">
+                        <div role="radiogroup" aria-labelledby="titulo_aprobado">
+                            <p class="titulo" id="titulo_aprobado">Aprobado</p>
+                            <div class="opciones">
+                                <label><span class="titulo">Si</span><input type="radio" name="aprobado" value="si"></label>
+                                <label><span class="titulo">No</span><input type="radio" name="aprobado" value="no"></label>
+                            </div>
+                        </div>
+                        <div role="radiogroup" aria-labelledby="titulo_devolucion">
+                            <p class="titulo" id="titulo_devolucion">Devolución</p>
+                            <div class="opciones">
+                                <label><span class="titulo">Si</span><input type="radio" name="devolucion" value="si"></label>
+                                <label><span class="titulo">No</span><input type="radio" name="devolucion" value="no"></label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Queda en blanco para firmar y sellar a mano sobre la hoja impresa -->
+                    <div class="grupo firma">
+                        <p class="titulo">Firma y sello del director científico</p>
+                        <div class="espacio-firma"></div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <div class="acciones">
+            <button type="button" id="guardar" class="boton-principal">Guardar</button>
+            <button type="button" id="imprimir" class="boton-secundario">Imprimir</button>
+        </div>
+
+    </main>
+    <footer>
+        <p>Accesorios - Monturas - Lentes - Despacho de Fórmulas Av 1 de Mayo No 19 C - 09 sur Local A-01</p>
+        <p>celular 3023394660 centro comercial Nueva vision Barrio Olaya Bogota DC</p>
+    </footer>
+    <script src="script.js?v=3"></script>
+    </body>
+</html>

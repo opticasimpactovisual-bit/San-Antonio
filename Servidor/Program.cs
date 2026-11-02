@@ -9,6 +9,9 @@
 //   DELETE /api/facturas/{id}           elimina una factura con sus productos y fórmulas
 //   GET  /api/formulas/factura?numero=.. busca una factura por número y trae sus fórmulas
 //   POST /api/formulas                  guarda las fórmulas de la página Formulas_clientes.html
+//   GET  /api/trazabilidad/buscar?orden=.. busca las planillas de un número de orden
+//   POST /api/trazabilidad              guarda una planilla de la página trasavilidad.html
+//   PUT  /api/trazabilidad/{id}         guarda los cambios de una planilla ya guardada
 
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.FileProviders;
@@ -37,6 +40,14 @@ app.UseStaticFiles(new StaticFileOptions
     RequestPath = "/Formulas"
 });
 app.UseStaticFiles(new StaticFileOptions { FileProvider = carpetaPagina, RequestPath = "/Facturacion" });
+
+// La planilla de trazabilidad (carpeta Trasavilidad) se abre en /Trasavilidad/trasavilidad.html.
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", "Trasavilidad"))),
+    RequestPath = "/Trasavilidad"
+});
 
 
 // ---------- Guardar una factura nueva ----------
@@ -203,7 +214,7 @@ app.MapDelete("/api/facturas/{id:int}", async (int id) =>
 });
 
 
-// ---------- Buscar una factura por número y traer sus fórmulas ----------
+// ---------- Buscar una factura por número y traer sus fórmulas y productos ----------
 // El número de factura se puede repetir: se toma la más reciente.
 app.MapGet("/api/formulas/factura", async (string? numero) =>
 {
@@ -228,6 +239,11 @@ app.MapGet("/api/formulas/factura", async (string? numero) =>
         "SELECT * FROM dbo.formulas WHERE id_factura = @id ORDER BY id_formula;", cn);
     cmdFormulas.Parameters.AddWithValue("@id", factura["id_factura"]);
     factura["formulas"] = await LeerFilas(cmdFormulas);
+
+    var cmdProductos = new SqlCommand(
+        "SELECT * FROM dbo.factura_productos WHERE id_factura = @id ORDER BY id_producto;", cn);
+    cmdProductos.Parameters.AddWithValue("@id", factura["id_factura"]);
+    factura["productos"] = await LeerFilas(cmdProductos);
 
     return Results.Ok(factura);
 });
@@ -299,6 +315,99 @@ app.MapPost("/api/formulas", async (GuardarFormulasDto d) =>
         return Results.Json(new { mensaje = "No se pudo guardar en SQL Server: " + ex.Message }, statusCode: 500);
     }
 });
+
+
+// ---------- Buscar planillas por número de orden ----------
+// El número de orden se puede repetir: se traen todas, la más reciente primero.
+app.MapGet("/api/trazabilidad/buscar", async (string? orden) =>
+{
+    if (string.IsNullOrWhiteSpace(orden)) return Results.Ok(new List<Dictionary<string, object?>>());
+
+    await using var cn = new SqlConnection(conexion);
+    await cn.OpenAsync();
+    var cmd = new SqlCommand(@"
+        SELECT TOP 30 * FROM dbo.trazabilidad
+        WHERE numero_orden = @orden
+        ORDER BY id_trazabilidad DESC;", cn);
+    cmd.Parameters.AddWithValue("@orden", orden.Trim());
+    return Results.Ok(await LeerFilas(cmd));
+});
+
+
+// ---------- Guardar una planilla de trazabilidad ----------
+app.MapPost("/api/trazabilidad", (TrazabilidadDto t) => GuardarTrazabilidad(t, null));
+
+
+// ---------- Guardar los cambios de una planilla ya guardada ----------
+app.MapPut("/api/trazabilidad/{id:int}", (int id, TrazabilidadDto t) => GuardarTrazabilidad(t, id));
+
+
+// Si idExistente es null crea la planilla; si no, la actualiza
+async Task<IResult> GuardarTrazabilidad(TrazabilidadDto t, int? idExistente)
+{
+    try
+    {
+        await using var cn = new SqlConnection(conexion);
+        await cn.OpenAsync();
+
+        var cmd = idExistente is null
+            ? new SqlCommand(@"
+                INSERT INTO dbo.trazabilidad (numero_orden, fecha_adquirencia, nombre_paciente, proveedor, fecha_envio,
+                                              prescripcion_od, prescripcion_oi, prescripcion_add,
+                                              fecha_llegada, material, montura,
+                                              invima_1, invima_2, lote_1, lote_2,
+                                              lensometria_od, lensometria_oi, lensometria_add,
+                                              aprobado, devolucion)
+                OUTPUT INSERTED.id_trazabilidad
+                VALUES (@orden, @adquirencia, @paciente, @proveedor, @envio,
+                        @presOd, @presOi, @presAdd,
+                        @llegada, @material, @montura,
+                        @invima1, @invima2, @lote1, @lote2,
+                        @lensOd, @lensOi, @lensAdd,
+                        @aprobado, @devolucion);", cn)
+            : new SqlCommand(@"
+                UPDATE dbo.trazabilidad
+                SET numero_orden = @orden, fecha_adquirencia = @adquirencia, nombre_paciente = @paciente,
+                    proveedor = @proveedor, fecha_envio = @envio,
+                    prescripcion_od = @presOd, prescripcion_oi = @presOi, prescripcion_add = @presAdd,
+                    fecha_llegada = @llegada, material = @material, montura = @montura,
+                    invima_1 = @invima1, invima_2 = @invima2, lote_1 = @lote1, lote_2 = @lote2,
+                    lensometria_od = @lensOd, lensometria_oi = @lensOi, lensometria_add = @lensAdd,
+                    aprobado = @aprobado, devolucion = @devolucion
+                OUTPUT INSERTED.id_trazabilidad
+                WHERE id_trazabilidad = @id;", cn);
+        if (idExistente is not null) cmd.Parameters.AddWithValue("@id", idExistente);
+        cmd.Parameters.AddWithValue("@orden", Valor(t.NumeroOrden));
+        cmd.Parameters.AddWithValue("@adquirencia", (object?)t.FechaAdquirencia ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@paciente", Valor(t.NombrePaciente));
+        cmd.Parameters.AddWithValue("@proveedor", Valor(t.Proveedor));
+        cmd.Parameters.AddWithValue("@envio", (object?)t.FechaEnvio ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@presOd", Valor(t.PrescripcionOd));
+        cmd.Parameters.AddWithValue("@presOi", Valor(t.PrescripcionOi));
+        cmd.Parameters.AddWithValue("@presAdd", Valor(t.PrescripcionAdd));
+        cmd.Parameters.AddWithValue("@llegada", (object?)t.FechaLlegada ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@material", Valor(t.Material));
+        cmd.Parameters.AddWithValue("@montura", Valor(t.Montura));
+        cmd.Parameters.AddWithValue("@invima1", Valor(t.Invima1));
+        cmd.Parameters.AddWithValue("@invima2", Valor(t.Invima2));
+        cmd.Parameters.AddWithValue("@lote1", Valor(t.Lote1));
+        cmd.Parameters.AddWithValue("@lote2", Valor(t.Lote2));
+        cmd.Parameters.AddWithValue("@lensOd", Valor(t.LensometriaOd));
+        cmd.Parameters.AddWithValue("@lensOi", Valor(t.LensometriaOi));
+        cmd.Parameters.AddWithValue("@lensAdd", Valor(t.LensometriaAdd));
+        cmd.Parameters.AddWithValue("@aprobado", (object?)t.Aprobado ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@devolucion", (object?)t.Devolucion ?? DBNull.Value);
+        if (await cmd.ExecuteScalarAsync() is not int idTrazabilidad)
+            return Results.NotFound(new { mensaje = "No existe la planilla " + idExistente });
+
+        return Results.Ok(new { idTrazabilidad, mensaje = idExistente is null ? "Planilla guardada." : "Planilla actualizada." });
+    }
+    catch (SqlException ex)
+    {
+        app.Logger.LogError(ex, "Error de SQL Server al guardar la planilla de trazabilidad");
+        return Results.Json(new { mensaje = "No se pudo guardar en SQL Server: " + ex.Message }, statusCode: 500);
+    }
+}
 
 app.Run();
 
@@ -396,3 +505,25 @@ record FormulaDto(
     TimeOnly? HoraEntrega);
 
 record GuardarFormulasDto(int? IdFactura, string? NumeroFactura, List<FormulaDto>? Formulas);
+
+record TrazabilidadDto(
+    string? NumeroOrden,
+    DateOnly? FechaAdquirencia,
+    string? NombrePaciente,
+    string? Proveedor,
+    DateOnly? FechaEnvio,
+    string? PrescripcionOd,
+    string? PrescripcionOi,
+    string? PrescripcionAdd,
+    DateOnly? FechaLlegada,
+    string? Material,
+    string? Montura,
+    string? Invima1,
+    string? Invima2,
+    string? Lote1,
+    string? Lote2,
+    string? LensometriaOd,
+    string? LensometriaOi,
+    string? LensometriaAdd,
+    bool? Aprobado,
+    bool? Devolucion);
