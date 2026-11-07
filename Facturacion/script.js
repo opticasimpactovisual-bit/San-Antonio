@@ -287,7 +287,7 @@
             // Una fila de accesorio por cada accesorio guardado
             const listaAccesorios = f.accesorios || [];
             for (let i = 1; i < listaAccesorios.length; i++) {
-                document.getElementById("agregarAccesorio").click();
+                if (document.getElementById("agregarAccesorio")) document.getElementById("agregarAccesorio").click();
             }
             document.querySelectorAll(".accesorio").forEach(function (fila, i) {
                 const a = listaAccesorios[i];
@@ -355,7 +355,8 @@
         const accesorios = document.getElementById("accesorios");
         let contadorAccesorios = 1;
 
-        document.getElementById("agregarAccesorio").addEventListener("click", function () {
+        // Solo si la página tiene la sección de accesorios
+        if (accesorios) document.getElementById("agregarAccesorio").addEventListener("click", function () {
             contadorAccesorios++;
             const nueva = accesorios.querySelector(".accesorio").cloneNode(true);
 
