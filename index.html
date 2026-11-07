@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Centro Óptico San Antonio · Panel principal</title>
+  <style>
+    :root {
+      --bg: #f4f6fb;
+      --surface: #ffffff;
+      --text: #1d2433;
+      --muted: #6b7385;
+      --border: #e3e7ef;
+      --primary: #1f5fbf;
+      --primary-dark: #17478f;
+      --shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 4px 12px rgba(16, 24, 40, .06);
+      --shadow-hover: 0 4px 8px rgba(16, 24, 40, .08), 0 12px 28px rgba(16, 24, 40, .12);
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---------- Encabezado ---------- */
+    header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: #fff;
+      padding: 28px 32px 72px;
+    }
+    .header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .brand-logo {
+      width: 48px; height: 48px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .15);
+      display: grid; place-items: center;
+    }
+    .brand h1 { font-size: 1.35rem; font-weight: 600; }
+    .brand p { font-size: .9rem; opacity: .85; }
+    .clock { text-align: right; font-size: .9rem; opacity: .9; }
+    .clock strong { display: block; font-size: 1.4rem; font-weight: 600; }
+
+    /* ---------- Contenido ---------- */
+    main {
+      flex: 1;
+      max-width: 1100px;
+      width: 100%;
+      margin: -44px auto 0;
+      padding: 0 32px 40px;
+    }
+
+    .search {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 18px;
+      margin-bottom: 28px;
+    }
+    .search svg { flex-shrink: 0; color: var(--muted); }
+    .search input {
+      border: none; outline: none;
+      font: inherit; font-size: 1rem;
+      width: 100%;
+      background: transparent;
+      color: var(--text);
+    }
+
+    .section-title {
+      font-size: .8rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      --accent: var(--primary);
+      position: relative;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow: hidden;
+      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    }
+    .card::before {
+      content: "";
+      position: absolute; inset: 0 0 auto 0;
+      height: 4px;
+      background: var(--accent);
+    }
+    .card:hover, .card:focus-visible {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-hover);
+      border-color: var(--accent);
+      outline: none;
+    }
+    .card-icon {
+      width: 52px; height: 52px;
+      border-radius: 12px;
+      display: grid; place-items: center;
+      background: color-mix(in srgb, var(--accent) 12%, white);
+      color: var(--accent);
+    }
+    .card h2 { font-size: 1.15rem; font-weight: 600; }
+    .card p { font-size: .92rem; color: var(--muted); line-height: 1.45; flex: 1; }
+    .card .go {
+      font-size: .9rem; font-weight: 600;
+      color: var(--accent);
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .card:hover .go svg { transform: translateX(3px); }
+    .go svg { transition: transform .18s ease; }
+
+    .card.facturacion  { --accent: #1f9d6b; }
+    .card.formulas     { --accent: #1f5fbf; }
+    .card.trazabilidad { --accent: #c7681a; }
+    .card.inventarios  { --accent: #7a4fd1; }
+
+    .empty {
+      display: none;
+      text-align: center;
+      color: var(--muted);
+      padding: 40px 0;
+    }
+
+    footer {
+      text-align: center;
+      font-size: .82rem;
+      color: var(--muted);
+      padding: 20px;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    @media (max-width: 600px) {
+      header { padding: 22px 20px 64px; }
+      main { padding: 0 20px 32px; }
+      .clock { text-align: left; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-logo" aria-hidden="true">
+          <!-- Ícono de gafas -->
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="6" cy="15" r="4"/><circle cx="18" cy="15" r="4"/>
+            <path d="M10 15h4"/><path d="M2.5 13 5 6h2"/><path d="M21.5 13 19 6h-2"/>
+          </svg>
+        </div>
+        <div>
+          <h1>Centro Óptico San Antonio</h1>
+          <p>Sistema de gestión</p>
+        </div>
+      </div>
+      <div class="clock">
+        <strong id="hora">--:--</strong>
+        <span id="fecha"></span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <label class="search">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="search" id="buscar" placeholder="Buscar módulo…" autocomplete="off" aria-label="Buscar módulo">
+    </label>
+
+    <p class="section-title">Módulos</p>
+
+    <div class="grid" id="modulos">
+
+      <a class="card facturacion" href="/Facturacion/Facturacion.html" data-keywords="facturacion facturas ventas cobro pagos">
+        <div class="card-icon">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6M9 9h2"/></svg>
+        </div>
+        <h2>Facturación</h2>
+        <p>Emisión y consulta de facturas, ventas y pagos de clientes.</p>
+        <span class="go">Abrir <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </a>
+
+      <a class="card formulas" href="/Formulas/Formulas_clientes.html" data-keywords="formulas clientes prescripcion receta graduacion">
+        <div class="card-icon">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="4"/><path d="M2 21v-1a6 6 0 0 1 6-6h2"/><circle cx="17.5" cy="17.5" r="3.5"/><path d="M17.5 16v3M16 17.5h3"/></svg>
+        </div>
+        <h2>Fórmulas de clientes</h2>
+        <p>Registro de fórmulas ópticas y datos de cada cliente.</p>
+        <span class="go">Abrir <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </a>
+
+      <a class="card trazabilidad" href="/Trasavilidad/trasavilidad.html" data-keywords="trazabilidad trasavilidad seguimiento pedidos laboratorio">
+        <div class="card-icon">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2.5"/><circle cx="19" cy="18" r="2.5"/><path d="M7.5 6H15a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h7.5"/></svg>
+        </div>
+        <h2>Trazabilidad</h2>
+        <p>Seguimiento de pedidos y productos desde el ingreso hasta la entrega.</p>
+        <span class="go">Abrir <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </a>
+
+      <a class="card inventarios" href="/Invetarios/Inventarios.html" data-keywords="inventarios inventario monturas lentes stock productos">
+        <div class="card-icon">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>
+        </div>
+        <h2>Inventarios</h2>
+        <p>Control de existencias de monturas, lentes y demás productos.</p>
+        <span class="go">Abrir <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </a>
+
+    </div>
+
+    <p class="empty" id="sinResultados">No se encontró ningún módulo con ese nombre.</p>
+  </main>
+
+  <footer>
+    © <span id="anio"></span> Centro Óptico San Antonio · Sistema de gestión
+  </footer>
+
+  <script>
+    // Reloj y fecha
+    function actualizarReloj() {
+      const ahora = new Date();
+      document.getElementById('hora').textContent =
+        ahora.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+      const fecha = ahora.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      document.getElementById('fecha').textContent = fecha.charAt(0).toUpperCase() + fecha.slice(1);
+    }
+    actualizarReloj();
+    setInterval(actualizarReloj, 30000);
+    document.getElementById('anio').textContent = new Date().getFullYear();
+
+    // Buscador de módulos (ignora tildes y mayúsculas)
+    const normalizar = t => t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const tarjetas = document.querySelectorAll('#modulos .card');
+    const vacio = document.getElementById('sinResultados');
+
+    document.getElementById('buscar').addEventListener('input', e => {
+      const q = normalizar(e.target.value.trim());
+      let visibles = 0;
+      tarjetas.forEach(card => {
+        const texto = normalizar(card.textContent + ' ' + card.dataset.keywords);
+        const mostrar = texto.includes(q);
+        card.style.display = mostrar ? '' : 'none';
+        if (mostrar) visibles++;
+      });
+      vacio.style.display = visibles ? 'none' : 'block';
+    });
+
+    // Enter en el buscador abre el primer resultado visible
+    document.getElementById('buscar').addEventListener('keydown', e => {
+      if (e.key !== 'Enter') return;
+      const primero = [...tarjetas].find(c => c.style.display !== 'none');
+      if (primero) window.location.href = primero.href;
+    });
+  </script>
+</body>
+</html>
