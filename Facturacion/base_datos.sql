@@ -11,11 +11,11 @@ SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
 
-IF DB_ID(N'Optica_Optica_San_Antonio') IS NULL
-    CREATE DATABASE Optica_Optica_San_Antonio COLLATE Modern_Spanish_CI_AS;
+IF DB_ID(N'Opticas_San_Antonio') IS NULL
+    CREATE DATABASE Opticas_San_Antonio COLLATE Modern_Spanish_CI_AS;
 GO
 
-USE Optica_Optica_San_Antonio;
+USE Opticas_San_Antonio;
 GO
 
 -- -------------------------------------------------------------
@@ -162,9 +162,10 @@ GO
 
 -- =============================================================
 -- DATOS DE EJEMPLO (puede borrar esta parte si no los necesita)
--- Solo se agregan si la tabla de facturas está vacía
+-- Cambie a 1 solo si desea agregar estos datos de demostración
 -- =============================================================
-IF NOT EXISTS (SELECT 1 FROM dbo.facturas)
+DECLARE @insertarDatosEjemplo BIT = 0;
+IF @insertarDatosEjemplo = 1 AND NOT EXISTS (SELECT 1 FROM dbo.facturas)
 BEGIN
     DECLARE @id_cliente INT, @id_factura INT;
 

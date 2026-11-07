@@ -6,9 +6,11 @@ Muestra la página `Facturacion/Facturacion.html` y guarda las facturas en SQL S
 
 1. **SDK de .NET 10**: descárguelo de https://dotnet.microsoft.com/download/dotnet/10.0
    (elija "SDK", Windows x64) e instálelo.
-2. **La base de datos creada**: ejecute `Facturacion/base_datos.sql` en
-   SQL Server Management Studio con F5. Para la planilla de trazabilidad,
-   ejecute también `Trasavilidad/base_datos.sql`.
+2. **Las tablas creadas**: en SQL Server Management Studio conéctese a
+   `DESKTOP-C8L1T8M\SQLEXPRESS` y ejecute estos scripts en este orden:
+   `Facturacion/base_datos.sql`, `Formulas/base_datos.sql` y
+   `Trasavilidad/base_datos.sql`. Los tres trabajan sobre
+   `Opticas_San_Antonio`.
 
 ## Iniciar el servidor
 
@@ -29,17 +31,25 @@ Deje la terminal abierta mientras usa la página. Para apagar el servidor presio
 
 ## Conexión a SQL Server
 
-Está en `appsettings.json`:
+La configuración inicial en `appsettings.json` apunta a la instancia y base de
+datos mostradas en SQL Server Management Studio:
 
 ```
-Server=.\SQLEXPRESS;Database=Optica_Optica_San_Antonio;Trusted_Connection=True;TrustServerCertificate=True
+Server=DESKTOP-C8L1T8M\SQLEXPRESS;Database=Opticas_San_Antonio;Trusted_Connection=True;TrustServerCertificate=True
 ```
 
-- `.\SQLEXPRESS` es el SQL Server Express de este mismo computador.
-- `Trusted_Connection=True` entra con su usuario de Windows, igual que Management Studio.
+- `Trusted_Connection=True` usa la cuenta de Windows que ejecuta el servidor.
+- Si Management Studio se conectó con autenticación de SQL Server (por ejemplo,
+  el usuario `appuser` que aparece en la captura), configure la cadena solo para
+  la sesión actual de PowerShell, sustituyendo `<CLAVE>` por la contraseña local:
 
-Si su servidor tiene otro nombre, cambie `.\SQLEXPRESS` por el nombre que aparece
-al conectarse en Management Studio (por ejemplo `FRANCY_GUAUTA\SQLEXPRESS`).
+  ```
+  $env:ConnectionStrings__Optica = "Server=DESKTOP-C8L1T8M\SQLEXPRESS;Database=Opticas_San_Antonio;User ID=appuser;Password=<CLAVE>;TrustServerCertificate=True"
+  dotnet run
+  ```
+
+No escriba la contraseña en `appsettings.json` ni la comparta. Si el nombre de
+instancia cambia, use el nombre que aparece al conectarse en Management Studio.
 
 ## Direcciones del servidor
 

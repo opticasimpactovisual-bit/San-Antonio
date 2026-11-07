@@ -1,4 +1,4 @@
-USE Optica_Optica_San_Antonio;
+USE Opticas_San_Antonio;
 GO
 
 IF OBJECT_ID(N'dbo.formulas', N'U') IS NULL
