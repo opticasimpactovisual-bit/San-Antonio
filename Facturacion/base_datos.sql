@@ -89,7 +89,7 @@ CREATE TABLE dbo.factura_productos (
                     ON DELETE CASCADE,                     -- si se borra la factura, se borran sus productos
     tipo_montura    VARCHAR(30)                            -- Montura
                     CONSTRAINT chk_tipo_montura CHECK (tipo_montura IN (
-                        'TR90', 'Acetato', 'Metalica', '3Piezas',
+                        'TR90', 'Acetato', 'Metalica', '3Piezas', 'Inyectada',
                         'SobrepuestoTR90', 'SobrepuestoMetalica',
                         'AireMetalica', 'AireAcetato', 'AireTr90',
                         'Pacientedejamontura')),
@@ -97,6 +97,19 @@ CREATE TABLE dbo.factura_productos (
     referencia      NVARCHAR(60),                          -- Referencia
     tipo_lente      NVARCHAR(MAX)                          -- Lente (texto largo)
 );
+GO
+
+-- Bases de datos creadas antes: actualizar la lista para aceptar 'Inyectada'
+IF EXISTS (SELECT 1 FROM sys.check_constraints
+           WHERE name = 'chk_tipo_montura' AND definition NOT LIKE '%Inyectada%')
+BEGIN
+    ALTER TABLE dbo.factura_productos DROP CONSTRAINT chk_tipo_montura;
+    ALTER TABLE dbo.factura_productos ADD CONSTRAINT chk_tipo_montura CHECK (tipo_montura IN (
+        'TR90', 'Acetato', 'Metalica', '3Piezas', 'Inyectada',
+        'SobrepuestoTR90', 'SobrepuestoMetalica',
+        'AireMetalica', 'AireAcetato', 'AireTr90',
+        'Pacientedejamontura'));
+END
 GO
 
 -- -------------------------------------------------------------
