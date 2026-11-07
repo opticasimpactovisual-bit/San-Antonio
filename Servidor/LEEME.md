@@ -1,6 +1,6 @@
 # Servidor de facturación
 
-Muestra la página `Facturacion/Facturacion.html` y guarda las facturas en SQL Server.
+Muestra la página de inicio (`Inicio/index.html`), desde donde se abren todos los programas, y guarda en SQL Server.
 
 ## Lo que se necesita (una sola vez)
 
@@ -9,7 +9,8 @@ Muestra la página `Facturacion/Facturacion.html` y guarda las facturas en SQL S
 2. **Las tablas creadas**: en SQL Server Management Studio conéctese a
    `DESKTOP-C8L1T8M\SQLEXPRESS` y ejecute estos scripts en este orden:
    `Facturacion/base_datos.sql`, `Formulas/base_datos.sql`,
-   `Trasavilidad/base_datos.sql` e `Invetarios/base_datos.sql`. Todos trabajan sobre
+   `Trasavilidad/base_datos.sql`, `Invetarios/base_datos.sql` y
+   `Accesorios/base_datos.sql`. Todos trabajan sobre
    `Opticas_San_Antonio`.
 
 ## Iniciar el servidor
@@ -22,12 +23,12 @@ dotnet run
 
 Cuando aparezca `Now listening on: http://localhost:5000`, abra en el navegador:
 
-**http://localhost:5000**
+**http://localhost:5000** (página de inicio con todos los programas)
 
 Deje la terminal abierta mientras usa la página. Para apagar el servidor presione `Ctrl + C`.
 
-> Abra la página siempre desde http://localhost:5000. Si abre el archivo
-> Facturacion.html con doble clic, el botón Guardar no podrá conectarse.
+> Abra las páginas siempre desde http://localhost:5000. Si abre un archivo
+> .html con doble clic, el botón Guardar no podrá conectarse.
 
 ## Conexión a SQL Server
 
@@ -55,7 +56,8 @@ instancia cambia, use el nombre que aparece al conectarse en Management Studio.
 
 | Dirección | Qué hace |
 |---|---|
-| `GET /` | Muestra la página de facturación |
+| `GET /` | Muestra la página de inicio con todos los programas |
+| `GET /Facturacion/Facturacion.html` | Muestra la página de facturación |
 | `POST /api/facturas` | Guarda una factura con su cliente y sus productos |
 | `GET /api/facturas` | Lista las últimas 50 facturas |
 | `GET /api/facturas/{id}` | Muestra una factura con todos sus productos |
@@ -70,3 +72,7 @@ instancia cambia, use el nombre que aparece al conectarse en Management Studio.
 | `GET /api/monturas` | Lista las monturas del inventario |
 | `POST /api/monturas` | Guarda una montura en el inventario |
 | `DELETE /api/monturas/{id}` | Borra una montura del inventario |
+| `GET /Accesorios/Acesorios.html` | Muestra el inventario de accesorios |
+| `GET /api/accesorios` | Lista los accesorios del inventario |
+| `POST /api/accesorios` | Guarda un accesorio en el inventario |
+| `DELETE /api/accesorios/{id}` | Borra un accesorio del inventario |

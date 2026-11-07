@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accesorios</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+    <link rel="stylesheet" href="Acesorios.css?v=5">
+</head>
+<body>
+
+<a href="/" class="volver-inicio">&larr; Inicio</a>
+
+<!-- Buscar una factura anterior para verla o editarla (no sale al imprimir) -->
+<div class="buscador">
+    <div class="barra-busqueda">
+        <label for="Buscar">Buscar factura</label>
+        <input type="search" id="Buscar" placeholder="Número de factura, documento o nombre del cliente">
+        <button type="button" id="botonBuscar" class="boton-principal">Buscar</button>
+    </div>
+    <ul id="resultados" hidden></ul>
+    <div id="avisoEdicion" class="aviso-edicion" hidden>
+        <span>Editando la factura <strong id="textoEdicion"></strong>. Al guardar se actualiza esta factura.</span>
+        <button type="button" id="nuevaFactura" class="boton-secundario">Cancelar y hacer factura nueva</button>
+    </div>
+</div>
+
+<main class="hoja">
+
+    <!-- Encabezado: datos del negocio a la izquierda, número y fecha a la derecha -->
+    <header class="encabezado">
+        <div class="negocio">
+            <img src="../Facturacion/Imagen/Logo%20JPG.jpg" alt="Centro Óptico San Antonio" class="logo">
+            <h1>Centro optico san Antonio</h1>
+            <h2>Nit: 40179945-1 Regimen Simplificado</h2>
+            <p>Accesorios - Monturas - Lentes - Despacho de Fórmulas Av 1 de Mayo No19 C - 09 sur Local A-01 Telefono 2722839 centro comercial Nueva vision Barrio Olaya Bogota DC</p>
+        </div>
+        <div class="documento">
+            <span class="regimen">Régimen simplificado</span>
+            <h3>Factura de venta</h3>
+            <div class="datos-factura">
+                <label for="N_Factura">No.</label>
+                <input type="text" id="N_Factura" name="Numero de factura" placeholder="0001" class="numero">
+                <label for="fecha">Fecha de venta</label>
+                <input type="date" id="fecha" name="fecha">
+            </div>
+        </div>
+    </header>
+
+    <div class="franja"></div>
+
+    <!-- Valores de la venta -->
+    <section>
+        <p class="titulo">Valores</p>
+        <div class="valores">
+            <div class="valor">
+                <label for="Total">Total de la venta</label>
+                <div class="pesos"><span>$</span><input type="text" id="Total" name="Total" inputmode="numeric" placeholder="0"><span>COP</span></div>
+            </div>
+            <div class="valor">
+                <label for="Abono">Abono</label>
+                <div class="pesos"><span>$</span><input type="text" id="Abono" name="Abono" inputmode="numeric" placeholder="0"><span>COP</span></div>
+            </div>
+            <div class="valor saldo">
+                <label for="Saldo">Saldo</label>
+                <div class="pesos"><span>$</span><input type="text" id="Saldo" name="Saldo" placeholder="0" readonly><span>COP</span></div>
+            </div>
+            <div class="valor medio-pago">
+                <label for="MedioPago">Medio de pago</label>
+                <select id="MedioPago" name="MedioPago">
+                    <option value="">Seleccione el medio de pago</option>
+                    <option value="Efectivo">Efectivo</option>
+                    <option value="TC">Tarjeta de crédito (TC)</option>
+                    <option value="TD">Tarjeta débito (TD)</option>
+                    <option value="Sistecredito">Sistecrédito</option>
+                    <option value="ADDI">ADDI</option>
+                    <option value="Nequi">Nequi</option>
+                    <option value="Daviplata">Daviplata</option>
+                    <option value="BoldQR">Bold QR</option>
+                </select>
+            </div>
+        </div>
+    </section>
+
+    <!-- Datos del cliente -->
+    <section>
+        <p class="titulo">Cliente</p>
+        <div class="campos">
+            <label for="Cliente">Nombre</label>
+            <input type="text" id="Cliente" name="Cliente" placeholder="Ingrese el nombre del cliente">
+            <label for="Tipo_documento">Tipo de documento</label>
+            <select id="Tipo_documento" name="Tipo_documento">
+                <option value="CC">CC</option>
+                <option value="CE">CE</option>
+                <option value="TI">TI</option>
+                <option value="NIT">NIT</option>
+            </select>
+            <label for="Telefono">Teléfono</label>
+            <input type="text" id="Telefono" name="Telefono" placeholder="Ingrese el teléfono del cliente">
+            <label for="Documento">Documento</label>
+            <input type="text" id="Documento" name="Documento" placeholder="Ingrese el documento de identidad">
+            <label for="email">Correo</label>
+            <input type="email" id="email" name="email" placeholder="Ingrese el correo del cliente">
+        </div>
+    </section>
+
+    <!-- Productos: el botón "Agregar otro producto" copia el primer grupo -->
+    <section>
+        <p class="titulo">Datos de entrega</p>
+        <div id="productos">
+            <div class="producto">
+                <div class="celda">
+                    <label for="Montura">Tipo de montura</label>
+                    <select id="Montura" name="Montura">
+                        <option value="TR90">TR 90</option>
+                        <option value="Acetato">Acetato</option>
+                        <option value="Metalica">Metalica</option>
+                        <option value="3Piezas">3 Piezas</option>
+                        <option value="SobrepuestoTR90">Sobrepuesto TR 90</option>
+                        <option value="SobrepuestoMetalica">Sobrepuesto Metalica</option>
+                        <option value="AireMetalica">Aire Metalica</option>
+                        <option value="AireAcetato">Aire Acetato</option>
+                        <option value="AireTr90">Aire TR 90</option>
+                        <option value="Pacientedejamontura">Paciente deja montura</option>
+                    </select>
+                </div>
+                <div class="celda">
+                    <label for="Color">Color</label>
+                    <input type="text" id="Color" name="Color" placeholder="Color de la montura">
+                </div>
+                <div class="celda">
+                    <label for="Referencia">Referencia</label>
+                    <input type="text" id="Referencia" name="Referencia" placeholder="Referencia de la montura">
+                </div>
+                <button type="button" class="quitar" hidden>Quitar</button>
+                <div class="celda lente">
+                    <label for="Lente">Tipo de lente</label>
+                    <textarea id="Lente" name="Lente" rows="2" placeholder="Ej.: progresivo policarbonato, antirreflejo y filtro de luz azul"></textarea>
+                </div>
+            </div>
+        </div>
+        <div class="botones-productos">
+            <button type="button" id="agregarProducto" class="boton-secundario">+ Agregar otro producto</button>
+            <a href="../Formulas/Formulas_clientes.html" class="boton-secundario boton-enlace">Fórmulas de clientes</a>
+        </div>
+
+        <!-- Accesorios: el botón "Agregar accesorio" copia la primera fila -->
+        <p class="titulo subtitulo">Accesorios</p>
+        <div id="accesorios">
+            <div class="accesorio">
+                <div class="celda">
+                    <label for="TipoAccesorio">Tipo de producto</label>
+                    <select id="TipoAccesorio" name="TipoAccesorio">
+                        <option value="">Seleccione</option>
+                        <option value="Plaquetas">Plaquetas</option>
+                        <option value="Tornillos">Tornillos</option>
+                        <option value="Pañitos">Pañitos</option>
+                        <option value="Líquido antiempañante">Líquido antiempañante</option>
+                        <option value="Terminales">Terminales</option>
+                        <option value="Cordón">Cordón</option>
+                        <option value="Cadenas">Cadenas</option>
+                        <option value="Colas de ratón">Colas de ratón</option>
+                        <option value="Reparación">Reparación</option>
+                        <option value="Otros">Otros</option>
+                    </select>
+                </div>
+                <div class="celda">
+                    <label for="AccReferencia">Referencia</label>
+                    <input type="text" id="AccReferencia" name="AccReferencia" placeholder="Referencia del accesorio">
+                </div>
+                <div class="celda">
+                    <label for="AccCantidad">Cantidad</label>
+                    <input type="number" id="AccCantidad" name="AccCantidad" min="1" placeholder="1">
+                </div>
+                <button type="button" class="quitar" hidden>Quitar</button>
+            </div>
+        </div>
+        <div class="botones-productos">
+            <button type="button" id="agregarAccesorio" class="boton-secundario">+ Agregar accesorio</button>
+        </div>
+        <div class="campos">
+            <label for="FechaEntrega">Fecha de entrega</label>
+            <input type="date" id="FechaEntrega" name="FechaEntrega">
+        </div>
+    </section>
+
+    <!-- Entrega y vendedor -->
+    <div class="dos-columnas">
+        <section>
+            <p class="titulo">Detalle de la entrega</p>
+            <div class="campos">
+                <label for="HoraEntrega">Hora</label>
+                <input type="time" id="HoraEntrega" name="HoraEntrega">
+                <label for="Detalle">Detalle</label>
+                <input type="text" id="Detalle" name="Detalle" placeholder="Ingrese el detalle de la entrega">
+            </div>
+        </section>
+        <section>
+            <p class="titulo">Detalle del vendedor</p>
+            <div class="campos">
+                <label for="Vendedor">Vendedor</label>
+                <input type="text" id="Vendedor" name="Vendedor" placeholder="Ingrese el nombre del vendedor">
+            </div>
+        </section>
+    </div>
+
+    <div class="acciones">
+        <button type="button" id="guardar" class="boton-principal">Guardar Factura</button>
+        <button type="button" id="imprimir" class="boton-secundario">Imprimir Factura</button>
+    </div>
+
+    <footer class="pie">
+        <em>Creando una visión para el futuro</em><br>
+        Gracias por su compra
+    </footer>
+</main>
+<script src="../Facturacion/script.js?v=3"></script>
+</body>
+</html>

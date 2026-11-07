@@ -254,3 +254,16 @@ button:focus-visible, input[type="submit"]:focus-visible { outline: 2px solid va
         print-color-adjust: exact;
     }
 }
+
+/* Enlace para volver a la página de inicio (no sale al imprimir) */
+.volver-inicio {
+    display: block;
+    max-width: 816px;
+    margin: 0 auto 12px;
+    font-weight: 600;
+    font-size: 13px;
+    color: #1f7a2e;
+    text-decoration: none;
+}
+.volver-inicio:hover { text-decoration: underline; }
+@media print { .volver-inicio { display: none !important; } }

@@ -99,6 +99,31 @@ CREATE TABLE dbo.factura_productos (
 );
 GO
 
+-- -------------------------------------------------------------
+-- Accesorios de cada factura (sección "Accesorios" bajo los productos)
+-- Una factura puede tener varios accesorios: botón "Agregar accesorio"
+-- -------------------------------------------------------------
+IF OBJECT_ID(N'dbo.factura_accesorios', N'U') IS NULL
+CREATE TABLE dbo.factura_accesorios (
+    id_accesorio    INT IDENTITY(1,1) PRIMARY KEY,
+    id_factura      INT NOT NULL
+                    CONSTRAINT fk_accesorio_factura REFERENCES dbo.facturas (id_factura)
+                    ON DELETE CASCADE,                     -- si se borra la factura, se borran sus accesorios
+    tipo_producto   NVARCHAR(40)                           -- TipoAccesorio
+                    CONSTRAINT chk_tipo_accesorio CHECK (tipo_producto IN (
+                        N'Plaquetas', N'Tornillos', N'Pañitos', N'Líquido antiempañante',
+                        N'Terminales', N'Cordón', N'Cadenas', N'Colas de ratón',
+                        N'Reparación', N'Otros')),
+    referencia      NVARCHAR(60),                          -- AccReferencia
+    cantidad        INT NOT NULL DEFAULT 1                 -- AccCantidad
+                    CONSTRAINT chk_cantidad_accesorio CHECK (cantidad > 0)
+);
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'idx_accesorios_factura')
+    CREATE INDEX idx_accesorios_factura ON dbo.factura_accesorios (id_factura);
+GO
+
 -- Búsquedas frecuentes: facturas por número, por fecha y por cliente
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'idx_facturas_numero')
     CREATE INDEX idx_facturas_numero  ON dbo.facturas (numero_factura);

@@ -1,12 +1,12 @@
-// Servidor de facturación - Centro Óptico San Antonio
-// Muestra la página Facturacion.html y guarda las facturas en SQL Server.
+// Servidor de la óptica - Centro Óptico San Antonio
+// Muestra la página de inicio (Inicio/index.html) y todos los programas, y guarda en SQL Server.
 //
 //   POST /api/facturas                  guarda una factura con su cliente y sus productos
 //   PUT  /api/facturas/{id}             guarda los cambios de una factura anterior
 //   GET  /api/facturas                  lista las últimas 50 facturas
 //   GET  /api/facturas/buscar?texto=..  busca por número de factura, documento o nombre
 //   GET  /api/facturas/{id}             muestra una factura con todos sus productos
-//   DELETE /api/facturas/{id}           elimina una factura con sus productos y fórmulas
+//   DELETE /api/facturas/{id}           elimina una factura con sus productos, accesorios y fórmulas
 //   GET  /api/formulas/factura?numero=.. busca una factura por número y trae sus fórmulas
 //   POST /api/formulas                  guarda las fórmulas de la página Formulas_clientes.html
 //   GET  /api/trazabilidad/buscar?orden=.. busca las planillas de un número de orden
@@ -15,6 +15,9 @@
 //   GET  /api/monturas                  lista las monturas del inventario
 //   POST /api/monturas                  guarda una montura de la página Inventarios.html
 //   DELETE /api/monturas/{id}           borra una montura del inventario
+//   GET  /api/accesorios                lista los accesorios del inventario
+//   POST /api/accesorios                guarda un accesorio de la página Acesorios.html
+//   DELETE /api/accesorios/{id}         borra un accesorio del inventario
 
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.FileProviders;
@@ -25,17 +28,21 @@ var app = builder.Build();
 var conexion = builder.Configuration.GetConnectionString("Optica")
     ?? throw new InvalidOperationException("Falta la cadena de conexión 'Optica' en appsettings.json");
 
-// La página web vive en la carpeta Facturacion, al lado de esta carpeta
+// La página de inicio (carpeta Inicio) se abre en http://localhost:5000 y lleva a todos los programas
+var carpetaInicio = new PhysicalFileProvider(
+    Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", "Inicio")));
+var paginaInicio = new DefaultFilesOptions { FileProvider = carpetaInicio };
+paginaInicio.DefaultFileNames.Clear();
+paginaInicio.DefaultFileNames.Add("index.html");
+app.UseDefaultFiles(paginaInicio);
+app.UseStaticFiles(new StaticFileOptions { FileProvider = carpetaInicio });
+
+// La factura (carpeta Facturacion) se abre en /Facturacion/Facturacion.html
 var carpetaPagina = new PhysicalFileProvider(
     Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", "Facturacion")));
-var paginaInicio = new DefaultFilesOptions { FileProvider = carpetaPagina };
-paginaInicio.DefaultFileNames.Clear();
-paginaInicio.DefaultFileNames.Add("Facturacion.html");
-app.UseDefaultFiles(paginaInicio);
-app.UseStaticFiles(new StaticFileOptions { FileProvider = carpetaPagina });
 
 // La página de fórmulas (carpeta Formulas) se abre en /Formulas/Formulas_clientes.html.
-// Facturacion también queda en /Facturacion para que la página de fórmulas encuentre el logo.
+// Facturacion queda en /Facturacion; las demás páginas también toman el logo de ahí.
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(
@@ -58,6 +65,14 @@ app.UseStaticFiles(new StaticFileOptions
     FileProvider = new PhysicalFileProvider(
         Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", "Invetarios"))),
     RequestPath = "/Invetarios"
+});
+
+// La página de accesorios (carpeta Accesorios) se abre en /Accesorios/Acesorios.html.
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", "Accesorios"))),
+    RequestPath = "/Accesorios"
 });
 
 
@@ -129,6 +144,27 @@ async Task<IResult> GuardarFactura(FacturaDto f, int? idExistente)
             cmdProducto.Parameters.AddWithValue("@referencia", Valor(p.Referencia));
             cmdProducto.Parameters.AddWithValue("@lente", Valor(p.TipoLente));
             await cmdProducto.ExecuteNonQueryAsync();
+        }
+
+        // Accesorios: al editar se reemplazan por los del formulario
+        if (idExistente is not null)
+        {
+            var borrarAcc = new SqlCommand("DELETE FROM dbo.factura_accesorios WHERE id_factura = @id;", cn, tx);
+            borrarAcc.Parameters.AddWithValue("@id", idFactura);
+            await borrarAcc.ExecuteNonQueryAsync();
+        }
+
+        // Solo se guardan las filas que tienen tipo de producto
+        foreach (var a in (f.Accesorios ?? []).Where(a => !string.IsNullOrWhiteSpace(a.TipoProducto)))
+        {
+            var cmdAccesorio = new SqlCommand(@"
+                INSERT INTO dbo.factura_accesorios (id_factura, tipo_producto, referencia, cantidad)
+                VALUES (@factura, @tipo, @referencia, @cantidad);", cn, tx);
+            cmdAccesorio.Parameters.AddWithValue("@factura", idFactura);
+            cmdAccesorio.Parameters.AddWithValue("@tipo", a.TipoProducto!.Trim());
+            cmdAccesorio.Parameters.AddWithValue("@referencia", Valor(a.Referencia));
+            cmdAccesorio.Parameters.AddWithValue("@cantidad", a.Cantidad is > 0 ? a.Cantidad : 1);
+            await cmdAccesorio.ExecuteNonQueryAsync();
         }
 
         await tx.CommitAsync();
@@ -206,6 +242,11 @@ app.MapGet("/api/facturas/{id:int}", async (int id) =>
         "SELECT * FROM dbo.factura_productos WHERE id_factura = @id ORDER BY id_producto;", cn);
     cmdProductos.Parameters.AddWithValue("@id", id);
     factura["productos"] = await LeerFilas(cmdProductos);
+
+    var cmdAccesorios = new SqlCommand(
+        "SELECT * FROM dbo.factura_accesorios WHERE id_factura = @id ORDER BY id_accesorio;", cn);
+    cmdAccesorios.Parameters.AddWithValue("@id", id);
+    factura["accesorios"] = await LeerFilas(cmdAccesorios);
 
     return Results.Ok(factura);
 });
@@ -495,6 +536,68 @@ app.MapDelete("/api/monturas/{id:int}", async (int id) =>
         : Results.Ok(new { mensaje = "Montura borrada." });
 });
 
+
+// ---------- Listar los accesorios del inventario ----------
+app.MapGet("/api/accesorios", async () =>
+{
+    await using var cn = new SqlConnection(conexion);
+    await cn.OpenAsync();
+    var cmd = new SqlCommand("SELECT * FROM dbo.Accesorios ORDER BY IdAccesorio DESC;", cn);
+    return Results.Ok(await LeerFilas(cmd));
+});
+
+
+// ---------- Guardar un accesorio en el inventario ----------
+app.MapPost("/api/accesorios", async (AccesorioInventarioDto a) =>
+{
+    if (string.IsNullOrWhiteSpace(a.TipoProducto))
+        return Results.BadRequest(new { mensaje = "Seleccione el tipo de producto." });
+    if (a.Cantidad is < 0 || a.ValorCosto is < 0 || a.ValorCliente is < 0)
+        return Results.BadRequest(new { mensaje = "La cantidad y los valores no pueden ser negativos." });
+
+    try
+    {
+        await using var cn = new SqlConnection(conexion);
+        await cn.OpenAsync();
+        var cmd = new SqlCommand(@"
+            INSERT INTO dbo.Accesorios (TipoProducto, Referencia, Cantidad, FechaIngreso,
+                                        ValorCosto, ValorCliente, Observaciones)
+            OUTPUT INSERTED.IdAccesorio
+            VALUES (@tipo, @referencia, @cantidad, @fecha, @costo, @cliente, @observaciones);", cn);
+        cmd.Parameters.AddWithValue("@tipo", a.TipoProducto.Trim());
+        cmd.Parameters.AddWithValue("@referencia", Valor(a.Referencia));
+        cmd.Parameters.AddWithValue("@cantidad", a.Cantidad ?? 0);
+        cmd.Parameters.AddWithValue("@fecha", a.FechaIngreso ?? DateOnly.FromDateTime(DateTime.Today));
+        cmd.Parameters.AddWithValue("@costo", (object?)a.ValorCosto ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@cliente", (object?)a.ValorCliente ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@observaciones", Valor(a.Observaciones));
+        var idAccesorio = (int)(await cmd.ExecuteScalarAsync())!;
+        return Results.Ok(new { idAccesorio, mensaje = "Accesorio guardado." });
+    }
+    catch (SqlException ex) when (ex.Number == 547)
+    {
+        return Results.BadRequest(new { mensaje = "Algún valor no es válido: " + ex.Message });
+    }
+    catch (SqlException ex)
+    {
+        app.Logger.LogError(ex, "Error de SQL Server al guardar el accesorio");
+        return Results.Json(new { mensaje = "No se pudo guardar en SQL Server: " + ex.Message }, statusCode: 500);
+    }
+});
+
+
+// ---------- Borrar un accesorio del inventario ----------
+app.MapDelete("/api/accesorios/{id:int}", async (int id) =>
+{
+    await using var cn = new SqlConnection(conexion);
+    await cn.OpenAsync();
+    var cmd = new SqlCommand("DELETE FROM dbo.Accesorios WHERE IdAccesorio = @id;", cn);
+    cmd.Parameters.AddWithValue("@id", id);
+    return await cmd.ExecuteNonQueryAsync() == 0
+        ? Results.NotFound(new { mensaje = "No existe el accesorio " + id })
+        : Results.Ok(new { mensaje = "Accesorio borrado." });
+});
+
 app.Run();
 
 
@@ -564,6 +667,8 @@ record ClienteDto(string? Nombre, string? TipoDocumento, string? Documento, stri
 
 record ProductoDto(string? TipoMontura, string? Color, string? Referencia, string? TipoLente);
 
+record AccesorioDto(string? TipoProducto, string? Referencia, int? Cantidad);
+
 record FacturaDto(
     string? NumeroFactura,
     DateOnly? FechaVenta,
@@ -572,6 +677,7 @@ record FacturaDto(
     string? MedioPago,
     ClienteDto? Cliente,
     List<ProductoDto>? Productos,
+    List<AccesorioDto>? Accesorios,
     DateOnly? FechaEntrega,
     TimeOnly? HoraEntrega,
     string? DetalleEntrega,
@@ -628,3 +734,12 @@ record MonturaDto(
     bool? EsReplica,
     string? NombreReplica,
     string? Color);
+
+record AccesorioInventarioDto(
+    string? TipoProducto,
+    string? Referencia,
+    int? Cantidad,
+    DateOnly? FechaIngreso,
+    decimal? ValorCosto,
+    decimal? ValorCliente,
+    string? Observaciones);

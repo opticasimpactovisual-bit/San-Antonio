@@ -1,0 +1,409 @@
+/* Accesorios - mismo estilo que la factura de venta (Facturacion/facturacion.css) */
+/* Colores y letras de la factura (tomados del logo) */
+:root {
+    --fondo: #e4ece8;      /* escritorio alrededor de la hoja */
+    --papel: #ffffff;
+    --tinta: #1d2b25;      /* texto principal */
+    --gris: #5f6f68;       /* textos secundarios */
+    --linea: #d5e0db;
+    --verde: #1f7a2e;
+    --azul: #1aa3a8;
+    --verde-suave: #eef6f1;
+
+    --letra-titulo: "Nunito", "Trebuchet MS", sans-serif;
+    --letra-texto: "Source Sans 3", "Segoe UI", sans-serif;
+    --letra-numeros: "IBM Plex Mono", Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+body {
+    margin: 0;
+    padding: 28px 16px 48px;
+    background: var(--fondo);
+    color: var(--tinta);
+    font-family: var(--letra-texto);
+    font-size: 14px;
+}
+
+/* La hoja blanca */
+.hoja {
+    max-width: 816px;
+    margin: 0 auto;
+    padding: 48px;
+    background: var(--papel);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 12px 32px rgba(20, 50, 35, .14);
+    display: grid;
+    gap: 28px;
+}
+
+section { display: grid; gap: 10px; }
+
+/* ---------- Encabezado ---------- */
+.encabezado {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 24px;
+    align-items: start;
+}
+
+.logo { width: 100%; max-width: 330px; height: auto; display: block; }
+
+.negocio h1 {
+    margin: 10px 0 0;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+.negocio h2 { margin: 0; font-size: 13px; font-weight: 400; color: var(--gris); }
+.negocio p  { margin: 4px 0 0; font-size: 13px; line-height: 1.5; color: var(--gris); max-width: 46ch; }
+
+.documento { display: grid; justify-items: end; gap: 6px; text-align: right; }
+
+.regimen {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--azul);
+}
+
+.documento h3 {
+    margin: 0;
+    font-family: var(--letra-titulo);
+    font-size: 26px;
+    font-weight: 900;
+    color: var(--verde);
+}
+
+.datos-factura {
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: 6px 12px;
+    align-items: center;
+    margin-top: 4px;
+}
+.datos-factura label { font-size: 13px; color: var(--gris); }
+.datos-factura input { text-align: right; }
+
+.numero {
+    width: 8ch;
+    font-size: 18px !important;
+    background: #e3e7e5 !important;
+    border: 0 !important;
+    padding: 2px 6px !important;
+}
+
+/* Franja de colores bajo el encabezado */
+.franja {
+    height: 6px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--azul), var(--verde));
+}
+
+/* Títulos pequeños de cada sección: CLIENTE, VALORES... */
+.titulo {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--gris);
+}
+
+/* ---------- Campos ---------- */
+input, select {
+    font: inherit;
+    color: var(--tinta);
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--linea);
+    padding: 4px 2px;
+    min-width: 0;
+    width: 100%;
+}
+input:focus, select:focus {
+    outline: none;
+    border-bottom-color: var(--verde);
+    background: var(--verde-suave);
+}
+input::placeholder { color: #a7b5ae; }
+
+/* Números, fechas y valores en letra de máquina */
+input[type="date"], input[type="time"], .numero, .pesos input {
+    font-family: var(--letra-numeros);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Etiqueta a la izquierda y campo a la derecha, en dos pares por fila */
+.campos {
+    display: grid;
+    grid-template-columns: max-content 1fr max-content 1fr;
+    gap: 6px 14px;
+    align-items: center;
+}
+.campos label { color: var(--gris); }
+
+/* ---------- Valores (Total, Abono, Saldo) ---------- */
+.valores {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    background: var(--verde-suave);
+    border-radius: 6px;
+    padding: 16px;
+}
+.valor { display: grid; gap: 4px; }
+.valor label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--gris);
+}
+
+.pesos { display: flex; align-items: baseline; gap: 6px; font-family: var(--letra-numeros); }
+.pesos input { text-align: right; font-size: 16px; border-bottom-color: #c6d8cf; }
+.pesos span:last-child { font-size: 11px; color: var(--gris); }
+
+.saldo label { color: var(--verde); }
+.saldo input { font-weight: 500; color: var(--verde); font-size: 18px; border-bottom: 2px solid var(--verde); }
+
+/* Medio de pago: ocupa toda la fila, debajo de Total, Abono y Saldo */
+.medio-pago { grid-column: 1 / -1; }
+.medio-pago select { border-bottom-color: #c6d8cf; }
+
+/* ---------- Productos (tipo tabla) ---------- */
+#productos { border-top: 2px solid var(--tinta); }
+
+.producto {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 1fr auto;
+    gap: 14px;
+    align-items: end;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--linea);
+}
+.celda { display: grid; gap: 4px; }
+.celda label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--gris);
+}
+.celda input, .celda select { border-bottom-color: transparent; }
+
+/* ---------- Accesorios (misma forma de tabla que los productos) ---------- */
+.subtitulo { margin-top: 14px; }
+#accesorios { border-top: 2px solid var(--tinta); }
+.accesorio {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 0.6fr auto;
+    gap: 14px;
+    align-items: end;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--linea);
+}
+.accesorio input[type="number"] { font-family: var(--letra-numeros); }
+#agregarAccesorio { padding: 6px 12px; font-size: 13px; }
+
+/* Tipo de lente: ocupa toda la fila, debajo de los demás campos, y acepta textos largos */
+.lente { grid-column: 1 / -1; }
+textarea {
+    font: inherit;
+    color: var(--tinta);
+    width: 100%;
+    min-height: 3.2em;
+    padding: 6px 8px;
+    border: 1px solid var(--linea);
+    border-radius: 4px;
+    background: transparent;
+    line-height: 1.45;
+    resize: vertical;
+    field-sizing: content; /* crece solo mientras se escribe (navegadores nuevos) */
+}
+textarea:focus { outline: none; border-color: var(--verde); background: var(--verde-suave); }
+textarea::placeholder { color: #a7b5ae; }
+
+/* ---------- Botones ---------- */
+button {
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 6px;
+    padding: 8px 16px;
+}
+button:focus-visible { outline: 2px solid var(--azul); outline-offset: 2px; }
+
+.boton-principal { background: var(--verde); color: #fff; border: 1px solid var(--verde); }
+.boton-principal:hover { background: #18631f; }
+
+.boton-secundario { background: var(--papel); color: var(--verde); border: 1px solid var(--verde); }
+.boton-secundario:hover { background: var(--verde-suave); }
+
+/* Enlace con forma de botón (ir a Fórmulas de clientes) */
+.boton-enlace {
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+}
+
+/* "Agregar otro producto" y "Fórmulas de clientes" lado a lado */
+.botones-productos { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+
+#agregarProducto { justify-self: start; padding: 6px 12px; font-size: 13px; }
+
+.quitar {
+    background: none;
+    border: 1px solid var(--linea);
+    color: #b3402f;
+    padding: 4px 10px;
+    font-size: 12px;
+}
+
+.acciones { display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap; }
+
+/* Entrega y vendedor lado a lado */
+.dos-columnas {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 28px;
+}
+.dos-columnas .campos { grid-template-columns: max-content 1fr; }
+
+/* ---------- Pie ---------- */
+.pie {
+    text-align: center;
+    font-size: 12px;
+    color: var(--gris);
+    border-top: 1px solid var(--linea);
+    padding-top: 14px;
+    line-height: 1.5;
+}
+.pie em {
+    font-family: var(--letra-titulo);
+    font-style: normal;
+    font-weight: 800;
+    color: var(--azul);
+}
+
+/* ---------- Buscar factura (encima de la hoja) ---------- */
+.buscador {
+    max-width: 816px;
+    margin: 0 auto 16px;
+    display: grid;
+    gap: 10px;
+}
+.barra-busqueda {
+    display: grid;
+    grid-template-columns: max-content 1fr auto;
+    gap: 12px;
+    align-items: center;
+    background: var(--papel);
+    border-radius: 6px;
+    padding: 10px 14px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .08);
+}
+.barra-busqueda label { font-weight: 600; color: var(--gris); }
+
+#resultados {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    background: var(--papel);
+    border-radius: 6px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .08);
+    max-height: 320px;
+    overflow-y: auto;
+}
+#resultados li + li { border-top: 1px solid var(--linea); }
+/* Cada resultado: la factura (para abrirla) y a la derecha el botón Eliminar */
+#resultados li { display: flex; align-items: center; }
+#resultados .abrir {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: 9ch 11ch 1fr auto;
+    gap: 12px;
+    text-align: left;
+    background: none;
+    border: 0;
+    border-radius: 0;
+    font-weight: 400;
+    color: var(--tinta);
+    padding: 10px 14px;
+}
+#resultados .abrir:hover { background: var(--verde-suave); }
+#resultados .eliminar {
+    margin: 0 10px;
+    padding: 5px 10px;
+    font-size: 13px;
+    background: var(--papel);
+    color: #b3261e;
+    border: 1px solid #b3261e;
+}
+#resultados .eliminar:hover { background: #fdecea; }
+#resultados .num { font-family: var(--letra-numeros); font-weight: 500; color: var(--verde); }
+#resultados .fec, #resultados .val { font-family: var(--letra-numeros); color: var(--gris); }
+#resultados .vacio { padding: 10px 14px; color: var(--gris); }
+
+.aviso-edicion {
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    background: #fff6dc;
+    border: 1px solid #e8cf7a;
+    border-radius: 6px;
+    padding: 10px 14px;
+}
+.aviso-edicion button { padding: 6px 12px; font-size: 13px; }
+
+/* ---------- Celular ---------- */
+@media (max-width: 640px) {
+    .hoja { padding: 20px; }
+    .encabezado { grid-template-columns: 1fr; }
+    .documento { justify-items: start; text-align: left; }
+    .datos-factura input { text-align: left; }
+    .campos { grid-template-columns: max-content 1fr; }
+    .valores { grid-template-columns: 1fr; }
+    .producto { grid-template-columns: 1fr 1fr; }
+    .accesorio { grid-template-columns: 1fr 1fr; }
+    .barra-busqueda { grid-template-columns: 1fr auto; }
+    .barra-busqueda label { grid-column: 1 / -1; }
+    #resultados .abrir { grid-template-columns: 1fr 1fr; }
+}
+
+/* ---------- Impresión ---------- */
+@media print {
+    body { background: #fff; padding: 0; }
+    .buscador { display: none !important; }
+    .accesorio:has(option[value=""]:checked) { display: none; }  /* filas de accesorio vacías */
+    .hoja { box-shadow: none; padding: 0; max-width: none; }
+    button, .boton-enlace { display: none !important; }
+    input::placeholder, textarea::placeholder { color: transparent; }
+    textarea { border-color: transparent; resize: none; padding: 0; }
+    input, select { border-bottom-color: transparent; appearance: none; }
+    .valores, .franja, .numero {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}
+
+/* Enlace para volver a la página de inicio (no sale al imprimir) */
+.volver-inicio {
+    display: block;
+    max-width: 816px;
+    margin: 0 auto 12px;
+    font-weight: 600;
+    font-size: 13px;
+    color: #1f7a2e;
+    text-decoration: none;
+}
+.volver-inicio:hover { text-decoration: underline; }
+@media print { .volver-inicio { display: none !important; } }

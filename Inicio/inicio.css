@@ -1,0 +1,136 @@
+/* Página de inicio - mismo estilo que la factura de venta (colores del logo) */
+:root {
+    --fondo: #e4ece8;
+    --papel: #ffffff;
+    --tinta: #1d2b25;
+    --gris: #5f6f68;
+    --linea: #d5e0db;
+    --verde: #1f7a2e;
+    --azul: #1aa3a8;
+    --verde-suave: #eef6f1;
+
+    --letra-titulo: "Nunito", "Trebuchet MS", sans-serif;
+    --letra-texto: "Source Sans 3", "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    padding: 28px 16px 48px;
+    background: var(--fondo);
+    color: var(--tinta);
+    font-family: var(--letra-texto);
+    font-size: 14px;
+}
+
+.hoja {
+    max-width: 816px;
+    margin: 0 auto;
+    padding: 48px;
+    background: var(--papel);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 12px 32px rgba(20, 50, 35, .14);
+    display: grid;
+    gap: 28px;
+}
+
+section { display: grid; gap: 12px; }
+
+/* ---------- Encabezado ---------- */
+.encabezado {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 24px;
+    align-items: center;
+}
+
+.logo { width: 100%; max-width: 330px; height: auto; display: block; }
+
+.documento { display: grid; justify-items: end; gap: 6px; text-align: right; }
+
+.regimen {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--azul);
+}
+
+.documento h1 {
+    margin: 0;
+    font-family: var(--letra-titulo);
+    font-size: 26px;
+    font-weight: 900;
+    color: var(--verde);
+}
+
+.documento p { margin: 0; font-size: 13px; color: var(--gris); }
+
+.franja {
+    height: 6px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--azul), var(--verde));
+}
+
+.titulo {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--gris);
+}
+
+/* ---------- Botones de cada programa ---------- */
+.programas {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+}
+
+.programa {
+    display: grid;
+    gap: 6px;
+    align-content: start;
+    padding: 16px 18px;
+    background: var(--verde-suave);
+    border: 1px solid var(--linea);
+    border-left: 4px solid var(--verde);
+    border-radius: 6px;
+    color: var(--tinta);
+    text-decoration: none;
+    transition: background .15s, border-color .15s, transform .15s;
+}
+.programa strong {
+    font-family: var(--letra-titulo);
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--verde);
+}
+.programa span { font-size: 13px; line-height: 1.45; color: var(--gris); }
+
+.programa:hover { background: #e2f0e7; border-left-color: var(--azul); transform: translateY(-2px); }
+.programa:focus-visible { outline: 2px solid var(--azul); outline-offset: 2px; }
+
+/* ---------- Pie ---------- */
+.pie {
+    text-align: center;
+    font-size: 12px;
+    color: var(--gris);
+    border-top: 1px solid var(--linea);
+    padding-top: 14px;
+    line-height: 1.5;
+}
+.pie em {
+    font-family: var(--letra-titulo);
+    font-style: normal;
+    font-weight: 800;
+    color: var(--azul);
+}
+
+/* ---------- Celular ---------- */
+@media (max-width: 640px) {
+    .hoja { padding: 20px; }
+    .encabezado { grid-template-columns: 1fr; }
+    .documento { justify-items: start; text-align: left; }
+}

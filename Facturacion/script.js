@@ -63,6 +63,14 @@
                         tipoLente: grupo.querySelector("textarea").value.trim() || null
                     };
                 }),
+                // Un accesorio por cada fila de "Agregar accesorio" (las filas sin tipo no se guardan)
+                accesorios: Array.from(document.querySelectorAll(".accesorio")).map(function (fila) {
+                    return {
+                        tipoProducto: fila.querySelector("select").value || null,
+                        referencia: fila.querySelector("[id^='AccReferencia']").value.trim() || null,
+                        cantidad: Number(fila.querySelector("[id^='AccCantidad']").value) || 1
+                    };
+                }).filter(function (a) { return a.tipoProducto; }),
                 fechaEntrega: valor("FechaEntrega"),
                 horaEntrega: valor("HoraEntrega"),
                 detalleEntrega: valor("Detalle"),
@@ -89,7 +97,7 @@
                 }
                 limpiarFormulario();
             } catch (error) {
-                alert("No hay conexión con el servidor. Inicie el servidor y abra la página en http://localhost:5000");
+                alert("No hay conexión con el servidor. Inicie el servidor y abra la página en http://localhost:5000/Facturacion/Facturacion.html");
             }
         }
 
@@ -100,6 +108,12 @@
                 if (indice > 0) grupo.remove();
             });
             contadorProductos = 1;
+
+            // Quita los accesorios agregados y deja solo la primera fila
+            document.querySelectorAll(".accesorio").forEach(function (fila, indice) {
+                if (indice > 0) fila.remove();
+            });
+            contadorAccesorios = 1;
 
             document.querySelectorAll("input, textarea").forEach(function (campo) {
                 campo.value = "";
@@ -153,7 +167,7 @@
                 const respuesta = await fetch("/api/facturas/buscar?texto=" + encodeURIComponent(texto));
                 lista = await respuesta.json();
             } catch (error) {
-                alert("No hay conexión con el servidor. Inicie el servidor y abra la página en http://localhost:5000");
+                alert("No hay conexión con el servidor. Inicie el servidor y abra la página en http://localhost:5000/Facturacion/Facturacion.html");
                 return;
             }
 
@@ -214,7 +228,7 @@
                     return;
                 }
             } catch (error) {
-                alert("No hay conexión con el servidor. Inicie el servidor y abra la página en http://localhost:5000");
+                alert("No hay conexión con el servidor. Inicie el servidor y abra la página en http://localhost:5000/Facturacion/Facturacion.html");
                 return;
             }
 
@@ -237,7 +251,7 @@
                     return;
                 }
             } catch (error) {
-                alert("No hay conexión con el servidor. Inicie el servidor y abra la página en http://localhost:5000");
+                alert("No hay conexión con el servidor. Inicie el servidor y abra la página en http://localhost:5000/Facturacion/Facturacion.html");
                 return;
             }
 
@@ -268,6 +282,19 @@
                 grupo.querySelector("[id^='Color']").value = p.color || "";
                 grupo.querySelector("[id^='Referencia']").value = p.referencia || "";
                 grupo.querySelector("textarea").value = p.tipo_lente || "";
+            });
+
+            // Una fila de accesorio por cada accesorio guardado
+            const listaAccesorios = f.accesorios || [];
+            for (let i = 1; i < listaAccesorios.length; i++) {
+                document.getElementById("agregarAccesorio").click();
+            }
+            document.querySelectorAll(".accesorio").forEach(function (fila, i) {
+                const a = listaAccesorios[i];
+                if (!a) return;
+                elegir(fila.querySelector("select"), a.tipo_producto);
+                fila.querySelector("[id^='AccReferencia']").value = a.referencia || "";
+                fila.querySelector("[id^='AccCantidad']").value = a.cantidad || "";
             });
 
             document.getElementById("FechaEntrega").value = soloFecha(f.fecha_entrega);
@@ -321,4 +348,33 @@
             });
 
             productos.appendChild(nuevo);
+        });
+
+
+        // Agrega otra fila de accesorio (tipo, referencia y cantidad) copiando la primera
+        const accesorios = document.getElementById("accesorios");
+        let contadorAccesorios = 1;
+
+        document.getElementById("agregarAccesorio").addEventListener("click", function () {
+            contadorAccesorios++;
+            const nueva = accesorios.querySelector(".accesorio").cloneNode(true);
+
+            // Cada campo necesita un id distinto: TipoAccesorio_2, AccReferencia_2, ...
+            nueva.querySelectorAll("input, select").forEach(function (campo) {
+                campo.id = campo.id + "_" + contadorAccesorios;
+                campo.name = campo.id;
+                campo.value = "";
+                if (campo.tagName === "SELECT") campo.selectedIndex = 0;
+            });
+            nueva.querySelectorAll("label").forEach(function (etiqueta) {
+                etiqueta.htmlFor = etiqueta.htmlFor + "_" + contadorAccesorios;
+            });
+
+            const quitar = nueva.querySelector(".quitar");
+            quitar.hidden = false;
+            quitar.addEventListener("click", function () {
+                nueva.remove();
+            });
+
+            accesorios.appendChild(nueva);
         });
