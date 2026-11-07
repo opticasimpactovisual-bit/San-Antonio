@@ -8,8 +8,8 @@ Muestra la página `Facturacion/Facturacion.html` y guarda las facturas en SQL S
    (elija "SDK", Windows x64) e instálelo.
 2. **Las tablas creadas**: en SQL Server Management Studio conéctese a
    `DESKTOP-C8L1T8M\SQLEXPRESS` y ejecute estos scripts en este orden:
-   `Facturacion/base_datos.sql`, `Formulas/base_datos.sql` y
-   `Trasavilidad/base_datos.sql`. Los tres trabajan sobre
+   `Facturacion/base_datos.sql`, `Formulas/base_datos.sql`,
+   `Trasavilidad/base_datos.sql` e `Invetarios/base_datos.sql`. Todos trabajan sobre
    `Opticas_San_Antonio`.
 
 ## Iniciar el servidor
@@ -66,3 +66,7 @@ instancia cambia, use el nombre que aparece al conectarse en Management Studio.
 | `GET /api/trazabilidad/buscar?orden=..` | Busca las planillas de un número de orden |
 | `POST /api/trazabilidad` | Guarda una planilla de trazabilidad |
 | `PUT /api/trazabilidad/{id}` | Guarda los cambios de una planilla ya guardada |
+| `GET /Invetarios/Inventarios.html` | Muestra el inventario de monturas |
+| `GET /api/monturas` | Lista las monturas del inventario |
+| `POST /api/monturas` | Guarda una montura en el inventario |
+| `DELETE /api/monturas/{id}` | Borra una montura del inventario |

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventarios</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+    <link rel="stylesheet" href="Inventarios.css?v=2">
+</head>
+<body>
+
+<main class="hoja">
+
+    <!-- Encabezado: datos del negocio a la izquierda, título a la derecha -->
+    <header class="encabezado">
+        <div class="negocio">
+            <img src="../Facturacion/Imagen/Logo%20JPG.jpg" alt="Centro Óptico San Antonio" class="logo">
+            <h1>Centro Optico San Antonio</h1>
+            <h2>Nit: 40179945-1 Regimen Simplificado</h2>
+            <p>Accesorios - Monturas - Lentes - Despacho de Fórmulas Av 1 de Mayo No19 C - 09 sur Local A-01 Telefono 2722839 centro comercial Nueva vision Barrio Olaya Bogota DC</p>
+        </div>
+        <div class="documento">
+            <span class="regimen">Control de productos</span>
+            <h3>Inventarios</h3>
+            <p class="descripcion">Registre las monturas disponibles para la venta y consulte su stock.</p>
+        </div>
+    </header>
+
+    <div class="franja"></div>
+
+    <!-- Datos del producto -->
+    <section>
+        <p class="titulo">Producto</p>
+        <div class="campos">
+            <label for="ubicacion">Ubicación</label>
+            <input type="text" id="ubicacion" placeholder="Ubicación del producto">
+
+            <label for="Referencia">Referencia</label>
+            <input type="text" id="Referencia" placeholder="Nombre del producto">
+
+            <label for="Marca">Marca</label>
+            <input type="text" id="Marca" placeholder="Marca del producto">
+
+            <label for="Color">Color</label>
+            <input type="text" id="Color" placeholder="Color del producto">
+
+            <label for="FechaIngreso">Fecha de ingreso</label>
+            <input type="date" id="FechaIngreso">
+
+            <label for="cantidad">Cantidad</label>
+            <input type="number" id="cantidad" min="0" placeholder="0">
+        </div>
+    </section>
+
+    <!-- Características de la montura -->
+    <section>
+        <p class="titulo">Características</p>
+        <div class="campos">
+            <label for="Material">Material</label>
+            <input list="listaMaterial" id="Material" placeholder="Seleccione o escriba el material">
+            <datalist id="listaMaterial">
+                <option value="Plástico"></option>
+                <option value="Plastico al aire"></option>
+                <option value="Acetato"></option>
+                <option value="Acetato al aire"></option>
+                <option value="metalica al aire"></option>
+                <option value="TR 90 al aire"></option>
+                <option value="TR 90 con sobre puesto"></option>
+                <option value="Deportiva"></option>
+                <option value="TR 90"></option>
+            </datalist>
+
+            <label for="Forma">Forma</label>
+            <input list="listaForma" id="Forma" placeholder="Seleccione o escriba la forma">
+            <datalist id="listaForma">
+                <option value="Redonda"></option>
+                <option value="Cuadrada"></option>
+                <option value="Rectangular"></option>
+                <option value="Agatada"></option>
+                <option value="Ovalada"></option>
+            </datalist>
+
+            <label for="EstadoMontura">Estado</label>
+            <input list="listaEstadoMontura" id="EstadoMontura" placeholder="Nueva o Usada">
+            <datalist id="listaEstadoMontura">
+                <option value="Nueva"></option>
+                <option value="Usada"></option>
+            </datalist>
+
+            <label for="EsReplica">Es réplica</label>
+            <input list="listaEsReplica" id="EsReplica" placeholder="Si o No">
+            <datalist id="listaEsReplica">
+                <option value="Si"></option>
+                <option value="No"></option>
+            </datalist>
+
+            <label for="NombreReplica">Marca de la réplica</label>
+            <input type="text" id="NombreReplica" placeholder="Solo si es réplica">
+        </div>
+    </section>
+
+    <!-- Valores -->
+    <section>
+        <p class="titulo">Valores</p>
+        <div class="valores">
+            <div class="valor">
+                <label for="ValorCosto">Valor costo</label>
+                <div class="pesos"><span>$</span><input type="text" id="ValorCosto" inputmode="numeric" placeholder="0"><span>COP</span></div>
+            </div>
+            <div class="valor destacado">
+                <label for="ValorCliente">Valor al cliente</label>
+                <div class="pesos"><span>$</span><input type="text" id="ValorCliente" inputmode="numeric" placeholder="0"><span>COP</span></div>
+            </div>
+        </div>
+    </section>
+
+    <div class="acciones">
+        <p id="mensaje" class="mensaje" role="status"></p>
+        <button type="button" id="agregar" class="boton-principal">Agregar producto</button>
+    </div>
+
+    <!-- Tabla de monturas -->
+    <section>
+        <p class="titulo">Monturas registradas</p>
+        <div class="tabla-contenedor">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Ubicación</th>
+                        <th>Referencia</th>
+                        <th>Marca</th>
+                        <th>Material</th>
+                        <th>Forma</th>
+                        <th>Color</th>
+                        <th>Estado</th>
+                        <th class="numero">Cantidad</th>
+                        <th class="numero">Costo</th>
+                        <th class="numero">Cliente</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="tablaMonturas"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <footer class="pie">
+        <em>Creando una visión para el futuro</em><br>
+        Centro Optico San Antonio · Bogotá DC
+    </footer>
+
+</main>
+
+<script src="Inventarios.js" defer></script>
+</body>
+</html>

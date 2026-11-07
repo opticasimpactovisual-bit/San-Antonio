@@ -1,0 +1,233 @@
+/* Inventarios - mismo estilo que la factura de venta (colores del logo) */
+:root {
+    --fondo: #e4ece8;      /* escritorio alrededor de la hoja */
+    --papel: #ffffff;
+    --tinta: #1d2b25;      /* texto principal */
+    --gris: #5f6f68;       /* textos secundarios */
+    --linea: #d5e0db;
+    --verde: #1f7a2e;
+    --azul: #1aa3a8;
+    --verde-suave: #eef6f1;
+    --rojo: #b3261e;
+
+    --letra-titulo: "Nunito", "Trebuchet MS", sans-serif;
+    --letra-texto: "Source Sans 3", "Segoe UI", sans-serif;
+    --letra-numeros: "IBM Plex Mono", Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    padding: 28px 16px 48px;
+    background: var(--fondo);
+    color: var(--tinta);
+    font-family: var(--letra-texto);
+    font-size: 14px;
+}
+
+/* La hoja blanca (más ancha que la factura para que quepa la tabla) */
+.hoja {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 48px;
+    background: var(--papel);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 12px 32px rgba(20, 50, 35, .14);
+    display: grid;
+    gap: 28px;
+}
+
+section { display: grid; gap: 10px; }
+
+/* ---------- Encabezado ---------- */
+.encabezado {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 24px;
+    align-items: start;
+}
+
+.logo { width: 100%; max-width: 330px; height: auto; display: block; }
+
+.negocio h1 { margin: 10px 0 0; font-size: 13px; font-weight: 600; }
+.negocio h2 { margin: 0; font-size: 13px; font-weight: 400; color: var(--gris); }
+.negocio p  { margin: 4px 0 0; font-size: 13px; line-height: 1.5; color: var(--gris); max-width: 46ch; }
+
+.documento { display: grid; justify-items: end; gap: 6px; text-align: right; }
+
+.regimen {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--azul);
+}
+
+.documento h3 {
+    margin: 0;
+    font-family: var(--letra-titulo);
+    font-size: 26px;
+    font-weight: 900;
+    color: var(--verde);
+}
+
+.descripcion { margin: 0; max-width: 30ch; font-size: 13px; line-height: 1.5; color: var(--gris); }
+
+/* Franja de colores bajo el encabezado */
+.franja {
+    height: 6px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--azul), var(--verde));
+}
+
+/* Títulos pequeños de cada sección */
+.titulo {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--gris);
+}
+
+/* ---------- Campos ---------- */
+input, select {
+    font: inherit;
+    color: var(--tinta);
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--linea);
+    padding: 4px 2px;
+    min-width: 0;
+    width: 100%;
+}
+input:focus, select:focus {
+    outline: none;
+    border-bottom-color: var(--verde);
+    background: var(--verde-suave);
+}
+input::placeholder { color: #a7b5ae; }
+
+input[type="date"], input[type="number"], .pesos input {
+    font-family: var(--letra-numeros);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Etiqueta a la izquierda y campo a la derecha, dos pares por fila */
+.campos {
+    display: grid;
+    grid-template-columns: max-content 1fr max-content 1fr;
+    gap: 6px 14px;
+    align-items: center;
+}
+.campos label { color: var(--gris); }
+
+/* ---------- Valores ---------- */
+.valores {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    background: var(--verde-suave);
+    border-radius: 6px;
+    padding: 16px;
+}
+.valor { display: grid; gap: 4px; }
+.valor label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--gris);
+}
+
+.pesos { display: flex; align-items: baseline; gap: 6px; font-family: var(--letra-numeros); }
+.pesos input { text-align: right; font-size: 16px; border-bottom-color: #c6d8cf; }
+.pesos span:last-child { font-size: 11px; color: var(--gris); }
+
+.destacado label { color: var(--verde); }
+.destacado input { font-weight: 500; color: var(--verde); font-size: 18px; border-bottom: 2px solid var(--verde); }
+
+/* ---------- Botones y mensaje ---------- */
+button {
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 6px;
+    padding: 8px 16px;
+}
+button:focus-visible { outline: 2px solid var(--azul); outline-offset: 2px; }
+button:disabled { opacity: .6; cursor: wait; }
+
+.boton-principal { background: var(--verde); color: #fff; border: 1px solid var(--verde); }
+.boton-principal:hover { background: #18631f; }
+
+.acciones { display: flex; gap: 12px; justify-content: flex-end; align-items: center; flex-wrap: wrap; }
+
+.mensaje { margin: 0; min-height: 1.4em; font-weight: 600; }
+.mensaje.exito { color: var(--verde); }
+.mensaje.error { color: var(--rojo); }
+
+.btn-borrar {
+    padding: 4px 10px;
+    font-size: 12px;
+    background: var(--papel);
+    color: var(--rojo);
+    border: 1px solid var(--rojo);
+}
+.btn-borrar:hover { background: #fdecea; }
+
+/* ---------- Tabla ---------- */
+.tabla-contenedor { overflow-x: auto; border-top: 2px solid var(--tinta); }
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+
+th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid var(--linea); }
+
+th {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--gris);
+    white-space: nowrap;
+}
+
+tbody tr:hover { background: var(--verde-suave); }
+
+th.numero, td.numero {
+    text-align: right;
+    white-space: nowrap;
+    font-family: var(--letra-numeros);
+    font-variant-numeric: tabular-nums;
+}
+
+th.numero { font-family: var(--letra-texto); }
+
+.vacio { color: var(--gris); text-align: center; padding: 24px; }
+
+/* ---------- Pie ---------- */
+.pie {
+    text-align: center;
+    font-size: 12px;
+    color: var(--gris);
+    border-top: 1px solid var(--linea);
+    padding-top: 14px;
+    line-height: 1.5;
+}
+.pie em {
+    font-family: var(--letra-titulo);
+    font-style: normal;
+    font-weight: 800;
+    color: var(--azul);
+}
+
+/* ---------- Celular ---------- */
+@media (max-width: 640px) {
+    .hoja { padding: 20px; }
+    .encabezado { grid-template-columns: 1fr; }
+    .documento { justify-items: start; text-align: left; }
+    .campos { grid-template-columns: max-content 1fr; }
+    .valores { grid-template-columns: 1fr; }
+    .acciones { justify-content: stretch; }
+    .acciones button { width: 100%; }
+}

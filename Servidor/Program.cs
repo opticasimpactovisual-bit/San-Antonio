@@ -12,6 +12,9 @@
 //   GET  /api/trazabilidad/buscar?orden=.. busca las planillas de un número de orden
 //   POST /api/trazabilidad              guarda una planilla de la página trasavilidad.html
 //   PUT  /api/trazabilidad/{id}         guarda los cambios de una planilla ya guardada
+//   GET  /api/monturas                  lista las monturas del inventario
+//   POST /api/monturas                  guarda una montura de la página Inventarios.html
+//   DELETE /api/monturas/{id}           borra una montura del inventario
 
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.FileProviders;
@@ -47,6 +50,14 @@ app.UseStaticFiles(new StaticFileOptions
     FileProvider = new PhysicalFileProvider(
         Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", "Trasavilidad"))),
     RequestPath = "/Trasavilidad"
+});
+
+// El inventario de monturas (carpeta Invetarios) se abre en /Invetarios/Inventarios.html.
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", "Invetarios"))),
+    RequestPath = "/Invetarios"
 });
 
 
@@ -409,6 +420,81 @@ async Task<IResult> GuardarTrazabilidad(TrazabilidadDto t, int? idExistente)
     }
 }
 
+
+// ---------- Listar las monturas del inventario ----------
+app.MapGet("/api/monturas", async () =>
+{
+    await using var cn = new SqlConnection(conexion);
+    await cn.OpenAsync();
+    var cmd = new SqlCommand("SELECT * FROM dbo.Monturas ORDER BY IdMontura DESC;", cn);
+    return Results.Ok(await LeerFilas(cmd));
+});
+
+
+// ---------- Guardar una montura en el inventario ----------
+app.MapPost("/api/monturas", async (MonturaDto m) =>
+{
+    if (string.IsNullOrWhiteSpace(m.Ubicacion) || string.IsNullOrWhiteSpace(m.Referencia))
+        return Results.BadRequest(new { mensaje = "La ubicación y la referencia son obligatorias." });
+    if (m.ValorCosto is null || m.ValorCliente is null)
+        return Results.BadRequest(new { mensaje = "El valor de costo y el valor al cliente son obligatorios." });
+
+    try
+    {
+        await using var cn = new SqlConnection(conexion);
+        await cn.OpenAsync();
+        var cmd = new SqlCommand(@"
+            INSERT INTO dbo.Monturas (Ubicacion, Referencia, FechaIngreso, Cantidad, ValorCosto, ValorCliente,
+                                      Material, Forma, EstadoMontura, Marca, EsReplica, NombreReplica, Color)
+            OUTPUT INSERTED.IdMontura
+            VALUES (@ubicacion, @referencia, @fecha, @cantidad, @costo, @cliente,
+                    @material, @forma, @estado, @marca, @esReplica, @nombreReplica, @color);", cn);
+        cmd.Parameters.AddWithValue("@ubicacion", m.Ubicacion.Trim());
+        cmd.Parameters.AddWithValue("@referencia", m.Referencia.Trim());
+        cmd.Parameters.AddWithValue("@fecha", m.FechaIngreso ?? DateOnly.FromDateTime(DateTime.Today));
+        cmd.Parameters.AddWithValue("@cantidad", m.Cantidad ?? 0);
+        cmd.Parameters.AddWithValue("@costo", m.ValorCosto);
+        cmd.Parameters.AddWithValue("@cliente", m.ValorCliente);
+        cmd.Parameters.AddWithValue("@material", Valor(m.Material));
+        cmd.Parameters.AddWithValue("@forma", Valor(m.Forma));
+        cmd.Parameters.AddWithValue("@estado", string.IsNullOrWhiteSpace(m.EstadoMontura) ? "Nueva" : m.EstadoMontura.Trim());
+        cmd.Parameters.AddWithValue("@marca", Valor(m.Marca));
+        cmd.Parameters.AddWithValue("@esReplica", m.EsReplica == true);
+        // La tabla solo acepta marca de réplica cuando la montura es réplica
+        cmd.Parameters.AddWithValue("@nombreReplica", m.EsReplica == true ? Valor(m.NombreReplica) : DBNull.Value);
+        cmd.Parameters.AddWithValue("@color", Valor(m.Color));
+        var idMontura = (int)(await cmd.ExecuteScalarAsync())!;
+        return Results.Ok(new { IdMontura = idMontura, Referencia = m.Referencia.Trim() });
+    }
+    catch (SqlException ex) when (ex.Number is 2627 or 2601)
+    {
+        // Ya existe una montura con la misma referencia en la misma ubicación
+        return Results.BadRequest(new { mensaje = $"Ya existe la referencia \"{m.Referencia.Trim()}\" en la ubicación \"{m.Ubicacion.Trim()}\"." });
+    }
+    catch (SqlException ex) when (ex.Number == 547)
+    {
+        return Results.BadRequest(new { mensaje = "Algún valor no es válido: " + ex.Message });
+    }
+    catch (SqlException ex)
+    {
+        app.Logger.LogError(ex, "Error de SQL Server al guardar la montura");
+        return Results.Json(new { mensaje = "No se pudo guardar en SQL Server: " + ex.Message }, statusCode: 500);
+    }
+});
+
+
+// ---------- Borrar una montura del inventario ----------
+app.MapDelete("/api/monturas/{id:int}", async (int id) =>
+{
+    await using var cn = new SqlConnection(conexion);
+    await cn.OpenAsync();
+    var cmd = new SqlCommand("DELETE FROM dbo.Monturas WHERE IdMontura = @id;", cn);
+    cmd.Parameters.AddWithValue("@id", id);
+    return await cmd.ExecuteNonQueryAsync() == 0
+        ? Results.NotFound(new { mensaje = "No existe la montura " + id })
+        : Results.Ok(new { mensaje = "Montura borrada." });
+});
+
 app.Run();
 
 
@@ -527,3 +613,18 @@ record TrazabilidadDto(
     string? LensometriaAdd,
     bool? Aprobado,
     bool? Devolucion);
+
+record MonturaDto(
+    string? Ubicacion,
+    string? Referencia,
+    DateOnly? FechaIngreso,
+    int? Cantidad,
+    decimal? ValorCosto,
+    decimal? ValorCliente,
+    string? Material,
+    string? Forma,
+    string? EstadoMontura,
+    string? Marca,
+    bool? EsReplica,
+    string? NombreReplica,
+    string? Color);
