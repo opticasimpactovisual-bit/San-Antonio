@@ -176,6 +176,22 @@ button:disabled { opacity: .6; cursor: wait; }
 }
 .btn-borrar:hover { background: #fdecea; }
 
+.btn-editar {
+    padding: 4px 10px;
+    font-size: 12px;
+    background: var(--papel);
+    color: var(--verde);
+    border: 1px solid var(--verde);
+}
+.btn-editar:hover { background: var(--verde-suave); }
+
+.botones-fila { white-space: nowrap; }
+.botones-fila button + button { margin-left: 6px; }
+
+.boton-secundario { background: var(--papel); color: var(--gris); border: 1px solid var(--linea); }
+.boton-secundario:hover { background: var(--verde-suave); }
+.boton-secundario[hidden] { display: none; }
+
 /* ---------- Tabla ---------- */
 .tabla-contenedor { overflow-x: auto; border-top: 2px solid var(--tinta); }
 

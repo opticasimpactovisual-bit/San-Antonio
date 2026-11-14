@@ -472,8 +472,12 @@ app.MapGet("/api/monturas", async () =>
 });
 
 
-// ---------- Guardar una montura en el inventario ----------
-app.MapPost("/api/monturas", async (MonturaDto m) =>
+// ---------- Guardar una montura nueva o los cambios de una ya guardada ----------
+app.MapPost("/api/monturas", (MonturaDto m) => GuardarMontura(m, null));
+app.MapPut("/api/monturas/{id:int}", (int id, MonturaDto m) => GuardarMontura(m, id));
+
+// Si idExistente es null crea la montura; si no, la actualiza
+async Task<IResult> GuardarMontura(MonturaDto m, int? idExistente)
 {
     if (string.IsNullOrWhiteSpace(m.Ubicacion) || string.IsNullOrWhiteSpace(m.Referencia))
         return Results.BadRequest(new { mensaje = "La ubicación y la referencia son obligatorias." });
@@ -484,12 +488,22 @@ app.MapPost("/api/monturas", async (MonturaDto m) =>
     {
         await using var cn = new SqlConnection(conexion);
         await cn.OpenAsync();
-        var cmd = new SqlCommand(@"
-            INSERT INTO dbo.Monturas (Ubicacion, Referencia, FechaIngreso, Cantidad, ValorCosto, ValorCliente,
-                                      Material, Forma, EstadoMontura, Marca, EsReplica, NombreReplica, Color)
-            OUTPUT INSERTED.IdMontura
-            VALUES (@ubicacion, @referencia, @fecha, @cantidad, @costo, @cliente,
-                    @material, @forma, @estado, @marca, @esReplica, @nombreReplica, @color);", cn);
+        var cmd = idExistente is null
+            ? new SqlCommand(@"
+                INSERT INTO dbo.Monturas (Ubicacion, Referencia, FechaIngreso, Cantidad, ValorCosto, ValorCliente,
+                                          Material, Forma, EstadoMontura, Marca, EsReplica, NombreReplica, Color)
+                OUTPUT INSERTED.IdMontura
+                VALUES (@ubicacion, @referencia, @fecha, @cantidad, @costo, @cliente,
+                        @material, @forma, @estado, @marca, @esReplica, @nombreReplica, @color);", cn)
+            : new SqlCommand(@"
+                UPDATE dbo.Monturas SET
+                    Ubicacion = @ubicacion, Referencia = @referencia, FechaIngreso = @fecha, Cantidad = @cantidad,
+                    ValorCosto = @costo, ValorCliente = @cliente, Material = @material, Forma = @forma,
+                    EstadoMontura = @estado, Marca = @marca, EsReplica = @esReplica,
+                    NombreReplica = @nombreReplica, Color = @color
+                OUTPUT INSERTED.IdMontura
+                WHERE IdMontura = @id;", cn);
+        if (idExistente is not null) cmd.Parameters.AddWithValue("@id", idExistente);
         cmd.Parameters.AddWithValue("@ubicacion", m.Ubicacion.Trim());
         cmd.Parameters.AddWithValue("@referencia", m.Referencia.Trim());
         cmd.Parameters.AddWithValue("@fecha", m.FechaIngreso ?? DateOnly.FromDateTime(DateTime.Today));
@@ -504,13 +518,9 @@ app.MapPost("/api/monturas", async (MonturaDto m) =>
         // La tabla solo acepta marca de réplica cuando la montura es réplica
         cmd.Parameters.AddWithValue("@nombreReplica", m.EsReplica == true ? Valor(m.NombreReplica) : DBNull.Value);
         cmd.Parameters.AddWithValue("@color", Valor(m.Color));
-        var idMontura = (int)(await cmd.ExecuteScalarAsync())!;
+        if (await cmd.ExecuteScalarAsync() is not int idMontura)
+            return Results.NotFound(new { mensaje = "No existe la montura " + idExistente });
         return Results.Ok(new { IdMontura = idMontura, Referencia = m.Referencia.Trim() });
-    }
-    catch (SqlException ex) when (ex.Number is 2627 or 2601)
-    {
-        // Ya existe una montura con la misma referencia en la misma ubicación
-        return Results.BadRequest(new { mensaje = $"Ya existe la referencia \"{m.Referencia.Trim()}\" en la ubicación \"{m.Ubicacion.Trim()}\"." });
     }
     catch (SqlException ex) when (ex.Number == 547)
     {
@@ -521,7 +531,7 @@ app.MapPost("/api/monturas", async (MonturaDto m) =>
         app.Logger.LogError(ex, "Error de SQL Server al guardar la montura");
         return Results.Json(new { mensaje = "No se pudo guardar en SQL Server: " + ex.Message }, statusCode: 500);
     }
-});
+}
 
 
 // ---------- Borrar una montura del inventario ----------

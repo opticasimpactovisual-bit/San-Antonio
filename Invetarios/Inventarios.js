@@ -47,9 +47,42 @@ function validar(m) {
     return null;
 }
 
+// Montura que se está editando (null = se está agregando una nueva)
+let idEditando = null;
+
 function limpiarFormulario() {
     document.querySelectorAll('input').forEach((input) => { input.value = ''; });
     campo('ubicacion').focus();
+}
+
+function salirDeEdicion() {
+    idEditando = null;
+    campo('agregar').textContent = 'Agregar producto';
+    campo('cancelar').hidden = true;
+    limpiarFormulario();
+}
+
+// Pasa los datos de una montura de la tabla al formulario para cambiarlos
+function editarMontura(m) {
+    idEditando = m.IdMontura;
+    campo('ubicacion').value = m.Ubicacion ?? '';
+    campo('Referencia').value = m.Referencia ?? '';
+    campo('Marca').value = m.Marca ?? '';
+    campo('Color').value = m.Color ?? '';
+    campo('FechaIngreso').value = m.FechaIngreso ? String(m.FechaIngreso).slice(0, 10) : '';
+    campo('cantidad').value = m.Cantidad ?? '';
+    campo('Material').value = m.Material ?? '';
+    campo('Forma').value = m.Forma ?? '';
+    campo('EstadoMontura').value = m.EstadoMontura ?? '';
+    campo('EsReplica').value = m.EsReplica ? 'Si' : 'No';
+    campo('NombreReplica').value = m.NombreReplica ?? '';
+    campo('ValorCosto').value = m.ValorCosto ?? '';
+    campo('ValorCliente').value = m.ValorCliente ?? '';
+    campo('agregar').textContent = 'Guardar cambios';
+    campo('cancelar').hidden = false;
+    mostrarMensaje(`Editando la montura "${m.Referencia}". Cambie los datos y presione Guardar cambios.`, 'exito');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    campo('ubicacion').focus({ preventScroll: true });
 }
 
 async function agregarMontura() {
@@ -60,15 +93,15 @@ async function agregarMontura() {
     const boton = campo('agregar');
     boton.disabled = true;
     try {
-        const respuesta = await fetch(API, {
-            method: 'POST',
+        const respuesta = await fetch(idEditando ? `${API}/${idEditando}` : API, {
+            method: idEditando ? 'PUT' : 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(montura)
         });
         const datos = await respuesta.json();
         if (!respuesta.ok) throw new Error(datos.mensaje || 'No se pudo guardar la montura.');
-        mostrarMensaje(`Montura "${datos.referencia}" guardada.`, 'exito');
-        limpiarFormulario();
+        mostrarMensaje(`Montura "${datos.referencia}" ${idEditando ? 'actualizada' : 'guardada'}.`, 'exito');
+        salirDeEdicion();
         cargarMonturas();
     } catch (err) {
         mostrarMensaje(err.message === 'Failed to fetch' ? 'No hay conexión con el servidor. Enciéndalo con dotnet run en la carpeta Servidor.' : err.message, 'error');
@@ -82,6 +115,7 @@ async function borrarMontura(id, referencia) {
     try {
         const respuesta = await fetch(`${API}/${id}`, { method: 'DELETE' });
         if (!respuesta.ok) throw new Error('No se pudo borrar la montura.');
+        if (idEditando === id) salirDeEdicion();
         mostrarMensaje(`Montura "${referencia}" borrada.`, 'exito');
         cargarMonturas();
     } catch (err) {
@@ -121,6 +155,12 @@ async function cargarMonturas() {
                 celda(formatoPesos.format(m.ValorCliente), 'numero')
             );
             const acciones = document.createElement('td');
+            acciones.className = 'botones-fila';
+            const botonEditar = document.createElement('button');
+            botonEditar.textContent = 'Editar';
+            botonEditar.className = 'btn-editar';
+            botonEditar.addEventListener('click', () => editarMontura(m));
+            acciones.append(botonEditar);
             const botonBorrar = document.createElement('button');
             botonBorrar.textContent = 'Borrar';
             botonBorrar.className = 'btn-borrar';
@@ -135,4 +175,8 @@ async function cargarMonturas() {
 }
 
 campo('agregar').addEventListener('click', agregarMontura);
+campo('cancelar').addEventListener('click', () => {
+    salirDeEdicion();
+    mostrarMensaje('Edición cancelada.', 'exito');
+});
 cargarMonturas();

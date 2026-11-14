@@ -22,7 +22,6 @@ BEGIN
         Color           NVARCHAR(50)       NULL,
 
         CONSTRAINT PK_Monturas PRIMARY KEY (IdMontura),
-        CONSTRAINT UQ_Monturas_Referencia_Ubicacion UNIQUE (Referencia, Ubicacion),
         CONSTRAINT CK_Monturas_Cantidad CHECK (Cantidad >= 0),
         CONSTRAINT CK_Monturas_ValorCosto CHECK (ValorCosto >= 0),
         CONSTRAINT CK_Monturas_ValorCliente CHECK (ValorCliente >= 0),
@@ -37,4 +36,9 @@ GO
 -- Si la tabla se creó antes sin la columna Color, se agrega
 IF COL_LENGTH(N'dbo.Monturas', N'Color') IS NULL
     ALTER TABLE dbo.Monturas ADD Color NVARCHAR(50) NULL;
+GO
+
+-- Se permiten referencias repetidas: si la tabla se creó con la regla que las impedía, se quita
+IF OBJECT_ID(N'dbo.UQ_Monturas_Referencia_Ubicacion', N'UQ') IS NOT NULL
+    ALTER TABLE dbo.Monturas DROP CONSTRAINT UQ_Monturas_Referencia_Ubicacion;
 GO
