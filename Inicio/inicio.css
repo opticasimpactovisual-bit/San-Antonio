@@ -1,11 +1,11 @@
-/* Página de inicio - mismo estilo que la factura de venta (colores del logo) */
+/* Página de inicio - estilo de panel principal con los colores del logo */
 :root {
-    --fondo: #e4ece8;
-    --papel: #ffffff;
+    --fondo: #ffffff;
     --tinta: #1d2b25;
     --gris: #5f6f68;
     --linea: #d5e0db;
     --verde: #1f7a2e;
+    --verde-oscuro: #17601f;
     --azul: #1aa3a8;
     --verde-suave: #eef6f1;
 
@@ -17,7 +17,7 @@
 
 body {
     margin: 0;
-    padding: 28px 16px 48px;
+    padding: 24px 16px 48px;
     background: var(--fondo);
     color: var(--tinta);
     font-family: var(--letra-texto);
@@ -25,52 +25,83 @@ body {
 }
 
 .hoja {
-    max-width: 816px;
+    max-width: 960px;
     margin: 0 auto;
-    padding: 48px;
-    background: var(--papel);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 12px 32px rgba(20, 50, 35, .14);
     display: grid;
-    gap: 28px;
+    gap: 24px;
 }
 
-section { display: grid; gap: 12px; }
+section { display: grid; gap: 14px; }
 
 /* ---------- Encabezado ---------- */
 .encabezado {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 24px;
-    align-items: center;
+    align-items: start;
 }
 
-.logo { width: 100%; max-width: 330px; height: auto; display: block; }
+.negocio { display: grid; gap: 4px; max-width: 360px; }
+.logo { width: 100%; max-width: 330px; height: auto; display: block; margin-bottom: 8px; }
 
-.documento { display: grid; justify-items: end; gap: 6px; text-align: right; }
+.negocio h1 {
+    margin: 0;
+    font-family: var(--letra-titulo);
+    font-size: 21px;
+    font-weight: 800;
+    color: var(--verde);
+}
+.negocio h2 { margin: 0; font-size: 13px; font-weight: 600; color: var(--gris); }
+.negocio p { margin: 0; font-size: 13px; line-height: 1.55; color: var(--gris); }
+
+.documento { display: grid; justify-items: end; gap: 4px; text-align: right; }
 
 .regimen {
     font-size: 11px;
     font-weight: 600;
-    letter-spacing: .08em;
+    letter-spacing: .1em;
     text-transform: uppercase;
     color: var(--azul);
 }
 
-.documento h1 {
-    margin: 0;
+.documento h3 {
+    margin: 0 0 6px;
     font-family: var(--letra-titulo);
     font-size: 26px;
     font-weight: 900;
     color: var(--verde);
 }
 
-.documento p { margin: 0; font-size: 13px; color: var(--gris); }
+.hora { font-family: var(--letra-titulo); font-size: 18px; font-weight: 800; }
+.fecha { font-size: 13px; color: var(--gris); }
 
 .franja {
     height: 6px;
     border-radius: 3px;
     background: linear-gradient(90deg, var(--azul), var(--verde));
 }
+
+/* ---------- Buscador ---------- */
+.buscador {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--verde-suave);
+    border: 1px solid var(--linea);
+    border-radius: 6px;
+    color: var(--gris);
+}
+.buscador input {
+    width: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    font: inherit;
+    font-size: 15px;
+    color: var(--tinta);
+}
+.buscador:focus-within { border-color: var(--azul); }
 
 .titulo {
     margin: 0;
@@ -81,56 +112,72 @@ section { display: grid; gap: 12px; }
     color: var(--gris);
 }
 
-/* ---------- Botones de cada programa ---------- */
-.programas {
+/* ---------- Tarjetas de cada módulo ---------- */
+.modulos {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
 }
 
-.programa {
-    display: grid;
-    gap: 6px;
-    align-content: start;
-    padding: 16px 18px;
-    background: var(--verde-suave);
+.modulo {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 22px 20px 18px;
+    background: #fff;
     border: 1px solid var(--linea);
-    border-left: 4px solid var(--verde);
     border-radius: 6px;
     color: var(--tinta);
     text-decoration: none;
-    transition: background .15s, border-color .15s, transform .15s;
+    overflow: hidden;
+    transition: box-shadow .15s, transform .15s, border-color .15s;
 }
-.programa strong {
-    font-family: var(--letra-titulo);
-    font-size: 17px;
-    font-weight: 800;
+.modulo::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--azul), var(--verde));
+}
+
+.icono {
+    width: 46px;
+    height: 46px;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    background: var(--verde-suave);
     color: var(--verde);
 }
-.programa span { font-size: 13px; line-height: 1.45; color: var(--gris); }
 
-.programa:hover { background: #e2f0e7; border-left-color: var(--azul); transform: translateY(-2px); }
-.programa:focus-visible { outline: 2px solid var(--azul); outline-offset: 2px; }
-
-/* ---------- Pie ---------- */
-.pie {
-    text-align: center;
-    font-size: 12px;
-    color: var(--gris);
-    border-top: 1px solid var(--linea);
-    padding-top: 14px;
-    line-height: 1.5;
-}
-.pie em {
+.modulo strong {
     font-family: var(--letra-titulo);
-    font-style: normal;
+    font-size: 18px;
     font-weight: 800;
-    color: var(--azul);
 }
+.modulo .texto { flex: 1; font-size: 13px; line-height: 1.5; color: var(--gris); }
+
+.boton {
+    align-self: flex-start;
+    margin-top: 6px;
+    padding: 7px 14px;
+    border-radius: 4px;
+    background: var(--verde);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    transition: background .15s;
+}
+
+.modulo:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(20, 50, 35, .12); border-color: var(--azul); }
+.modulo:hover .boton { background: var(--verde-oscuro); }
+.modulo:focus-visible { outline: 2px solid var(--azul); outline-offset: 2px; }
+
+.vacio { display: none; margin: 0; padding: 32px 0; text-align: center; color: var(--gris); }
 
 /* ---------- Celular ---------- */
 @media (max-width: 640px) {
-    .hoja { padding: 20px; }
     .encabezado { grid-template-columns: 1fr; }
     .documento { justify-items: start; text-align: left; }
 }

@@ -7,61 +7,128 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Source+Sans+3:wght@400;600&display=swap">
-    <link rel="stylesheet" href="inicio.css?v=1">
+    <link rel="stylesheet" href="inicio.css?v=2">
 </head>
 <body>
 
 <main class="hoja">
 
+    <!-- Encabezado: logo y datos del negocio a la izquierda, panel y reloj a la derecha -->
     <header class="encabezado">
-        <img src="/Facturacion/Imagen/Logo%20JPG.jpg" alt="Centro Óptico San Antonio" class="logo">
+        <div class="negocio">
+            <img src="/Facturacion/Imagen/Logo%20JPG.jpg" alt="Centro Óptico San Antonio" class="logo">
+            <h1>Centro Óptico San Antonio</h1>
+            <h2>Nit: 40179945-1 Regimen Simplificado</h2>
+            <p>Accesorios - Monturas - Lentes - Despacho de Fórmulas Av 1 de Mayo No19 C - 09 sur Local A-01 Telefono 2722839 centro comercial Nueva vision Barrio Olaya Bogota DC</p>
+        </div>
         <div class="documento">
-            <span class="regimen">Programa de la óptica</span>
-            <h1>Inicio</h1>
-            <p>Elija el programa que necesita.</p>
+            <span class="regimen">Sistema de gestión</span>
+            <h3>Panel principal</h3>
+            <strong id="hora" class="hora">--:--</strong>
+            <span id="fecha" class="fecha"></span>
         </div>
     </header>
 
     <div class="franja"></div>
 
+    <label class="buscador">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="search" id="buscar" placeholder="Buscar módulo…" autocomplete="off" aria-label="Buscar módulo">
+    </label>
+
     <section>
-        <p class="titulo">Ventas</p>
-        <div class="programas">
-            <a class="programa" href="/Facturacion/Facturacion.html?v=6">
+        <p class="titulo">Módulos</p>
+
+        <div class="modulos" id="modulos">
+
+            <a class="modulo" href="/Facturacion/Facturacion.html?v=6" data-claves="facturacion facturas ventas pagos cobro">
+                <span class="icono">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6M9 9h2"/></svg>
+                </span>
                 <strong>Facturación</strong>
-                <span>Hacer, buscar, editar e imprimir facturas de venta con monturas (incluida Inyectada) y lentes.</span>
+                <span class="texto">Emisión y consulta de facturas, ventas y pagos de clientes.</span>
+                <span class="boton">Ingresar →</span>
             </a>
-            <a class="programa" href="/Accesorios/Acesorios.html?v=6">
-                <strong>Accesorios</strong>
-                <span>Formulario de venta con plaquetas, tornillos, pañitos, cordones y demás accesorios.</span>
-            </a>
-            <a class="programa" href="/Formulas/Formulas_clientes.html?v=6">
+
+            <a class="modulo" href="/Formulas/Formulas_clientes.html?v=6" data-claves="formulas clientes receta graduacion medidas doctor">
+                <span class="icono">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="4"/><path d="M2 21v-1a6 6 0 0 1 6-6h2"/><circle cx="17.5" cy="17.5" r="3.5"/><path d="M17.5 16v3M16 17.5h3"/></svg>
+                </span>
                 <strong>Fórmulas de clientes</strong>
-                <span>Registrar las fórmulas de cada factura: medidas, lente, montura y doctor.</span>
+                <span class="texto">Registro de fórmulas ópticas y datos de cada cliente.</span>
+                <span class="boton">Ingresar →</span>
             </a>
-        </div>
-    </section>
 
-    <section>
-        <p class="titulo">Control</p>
-        <div class="programas">
-            <a class="programa" href="/Trasavilidad/trasavilidad.html?v=6">
+            <a class="modulo" href="/Trasavilidad/trasavilidad.html?v=6" data-claves="trazabilidad trasavilidad seguimiento pedidos orden lotes invima">
+                <span class="icono">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2.5"/><circle cx="19" cy="18" r="2.5"/><path d="M7.5 6H15a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h7.5"/></svg>
+                </span>
                 <strong>Trazabilidad</strong>
-                <span>Planilla de seguimiento de cada orden: proveedor, lotes, Invima y lensometría.</span>
+                <span class="texto">Seguimiento de pedidos y productos desde el ingreso hasta la entrega.</span>
+                <span class="boton">Ingresar →</span>
             </a>
-            <a class="programa" href="/Invetarios/Inventarios.html?v=6">
-                <strong>Inventario de monturas</strong>
-                <span>Registrar las monturas disponibles y consultar el stock.</span>
-            </a>
-        </div>
-    </section>
 
-    <footer class="pie">
-        <em>Creando una visión para el futuro</em><br>
-        Centro Optico San Antonio · Bogotá DC
-    </footer>
+            <a class="modulo" href="/Accesorios/Acesorios.html?v=6" data-claves="accesorios plaquetas tornillos panitos cordones venta">
+                <span class="icono">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="15" r="4"/><circle cx="18" cy="15" r="4"/><path d="M10 15h4"/><path d="M2.5 13 5 6h2"/><path d="M21.5 13 19 6h-2"/></svg>
+                </span>
+                <strong>Accesorios</strong>
+                <span class="texto">Venta de accesorios: plaquetas, tornillos, pañitos, cordones y más.</span>
+                <span class="boton">Ingresar →</span>
+            </a>
+
+            <a class="modulo" href="/Invetarios/Inventarios.html?v=6" data-claves="inventarios inventario monturas lentes stock existencias productos">
+                <span class="icono">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>
+                </span>
+                <strong>Inventarios</strong>
+                <span class="texto">Control de existencias de monturas, lentes y demás productos.</span>
+                <span class="boton">Ingresar →</span>
+            </a>
+
+        </div>
+
+        <p class="vacio" id="sinResultados">No se encontró ningún módulo con ese nombre.</p>
+    </section>
 
 </main>
+
+<script>
+    // Reloj y fecha
+    function actualizarReloj() {
+        const ahora = new Date();
+        document.getElementById('hora').textContent =
+            ahora.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+        const fecha = ahora.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        document.getElementById('fecha').textContent = fecha.charAt(0).toUpperCase() + fecha.slice(1);
+    }
+    actualizarReloj();
+    setInterval(actualizarReloj, 30000);
+
+    // Buscador de módulos (no importan tildes ni mayúsculas)
+    const normalizar = t => t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const modulos = document.querySelectorAll('#modulos .modulo');
+    const vacio = document.getElementById('sinResultados');
+    const buscar = document.getElementById('buscar');
+
+    buscar.addEventListener('input', () => {
+        const q = normalizar(buscar.value.trim());
+        let visibles = 0;
+        modulos.forEach(m => {
+            const mostrar = normalizar(m.textContent + ' ' + m.dataset.claves).includes(q);
+            m.style.display = mostrar ? '' : 'none';
+            if (mostrar) visibles++;
+        });
+        vacio.style.display = visibles ? 'none' : 'block';
+    });
+
+    // Enter abre el primer módulo que se ve
+    buscar.addEventListener('keydown', e => {
+        if (e.key !== 'Enter') return;
+        const primero = [...modulos].find(m => m.style.display !== 'none');
+        if (primero) window.location.href = primero.href;
+    });
+</script>
 
 </body>
 </html>
