@@ -6,7 +6,9 @@
 //   GET  /api/facturas                  lista las últimas 50 facturas
 //   GET  /api/facturas/buscar?texto=..  busca por número de factura, documento o nombre
 //   GET  /api/facturas/{id}             muestra una factura con todos sus productos
-//   DELETE /api/facturas/{id}           elimina una factura con sus productos, accesorios y fórmulas
+//   DELETE /api/facturas/{id}           elimina una factura con sus productos y fórmulas
+//   /api/ventas-accesorios ...          lo mismo que /api/facturas, para las ventas de Acesorios.html
+//                                       (tablas ventas_accesorios, venta_accesorios_detalle y venta_accesorios_productos)
 //   GET  /api/formulas/factura?numero=.. busca una factura por número y trae sus fórmulas
 //   POST /api/formulas                  guarda las fórmulas de la página Formulas_clientes.html
 //   GET  /api/trazabilidad/buscar?orden=.. busca las planillas de un número de orden
@@ -16,7 +18,7 @@
 //   POST /api/monturas                  guarda una montura de la página Inventarios.html
 //   DELETE /api/monturas/{id}           borra una montura del inventario
 //   GET  /api/accesorios                lista los accesorios del inventario
-//   POST /api/accesorios                guarda un accesorio de la página Acesorios.html
+//   POST /api/accesorios                guarda un accesorio en el inventario
 //   DELETE /api/accesorios/{id}         borra un accesorio del inventario
 
 using Microsoft.Data.SqlClient;
@@ -78,16 +80,103 @@ app.UseStaticFiles(new StaticFileOptions
 });
 
 
-// ---------- Guardar una factura nueva ----------
-app.MapPost("/api/facturas", (FacturaDto f) => GuardarFactura(f, null));
+// ---------- Facturas (Facturacion.html) y ventas de accesorios (Acesorios.html) ----------
+// Las dos páginas usan el mismo formulario, pero cada una guarda en sus propias tablas.
+var tablasFacturas = new TablasVenta("dbo.facturas", "id_factura", "dbo.factura_productos", null, "factura", false);
+var tablasAccesorios = new TablasVenta("dbo.ventas_accesorios", "id_venta", "dbo.venta_accesorios_productos",
+    "dbo.venta_accesorios_detalle", "venta de accesorios", true);
+MapearVentas("/api/facturas", tablasFacturas);
+MapearVentas("/api/ventas-accesorios", tablasAccesorios);
 
 
-// ---------- Guardar los cambios de una factura anterior ----------
-app.MapPut("/api/facturas/{id:int}", (int id, FacturaDto f) => GuardarFactura(f, id));
+// Crea las direcciones para guardar, editar, buscar, listar, ver y eliminar en las tablas indicadas
+void MapearVentas(string ruta, TablasVenta t)
+{
+    app.MapPost(ruta, (FacturaDto f) => GuardarVenta(t, f, null));
+    app.MapPut(ruta + "/{id:int}", (int id, FacturaDto f) => GuardarVenta(t, f, id));
+
+    // Buscar por número, documento o nombre del cliente
+    app.MapGet(ruta + "/buscar", async (string? texto) =>
+    {
+        if (string.IsNullOrWhiteSpace(texto)) return Results.Ok(new List<Dictionary<string, object?>>());
+
+        await using var cn = new SqlConnection(conexion);
+        await cn.OpenAsync();
+        var cmd = new SqlCommand($@"
+            SELECT TOP 30 f.{t.Id} AS id_factura, f.numero_factura, f.fecha_venta, c.nombre AS cliente,
+                   c.tipo_documento, c.documento, f.total, f.saldo
+            FROM {t.Encabezado} f
+            LEFT JOIN dbo.clientes c ON c.id_cliente = f.id_cliente
+            WHERE f.numero_factura = @texto
+               OR c.documento = @texto
+               OR c.nombre LIKE '%' + @texto + '%'
+            ORDER BY f.{t.Id} DESC;", cn);
+        cmd.Parameters.AddWithValue("@texto", texto.Trim());
+        return Results.Ok(await LeerFilas(cmd));
+    });
+
+    // Listar las últimas 50
+    app.MapGet(ruta, async () =>
+    {
+        await using var cn = new SqlConnection(conexion);
+        await cn.OpenAsync();
+        var cmd = new SqlCommand($@"
+            SELECT TOP 50 f.{t.Id} AS id_factura, f.numero_factura, f.fecha_venta, c.nombre AS cliente,
+                   f.total, f.abono, f.saldo,
+                   (SELECT COUNT(*) FROM {t.Productos} p WHERE p.{t.Id} = f.{t.Id}) AS productos
+            FROM {t.Encabezado} f
+            LEFT JOIN dbo.clientes c ON c.id_cliente = f.id_cliente
+            ORDER BY f.{t.Id} DESC;", cn);
+        return Results.Ok(await LeerFilas(cmd));
+    });
+
+    // Ver una con sus productos (y sus accesorios, si la página los tiene)
+    app.MapGet(ruta + "/{id:int}", async (int id) =>
+    {
+        await using var cn = new SqlConnection(conexion);
+        await cn.OpenAsync();
+
+        var cmd = new SqlCommand($@"
+            SELECT f.*, f.{t.Id} AS id_factura, c.nombre AS cliente, c.tipo_documento, c.documento, c.telefono, c.email
+            FROM {t.Encabezado} f
+            LEFT JOIN dbo.clientes c ON c.id_cliente = f.id_cliente
+            WHERE f.{t.Id} = @id;", cn);
+        cmd.Parameters.AddWithValue("@id", id);
+        var venta = (await LeerFilas(cmd)).FirstOrDefault();
+        if (venta is null) return Results.NotFound(new { mensaje = $"No existe la {t.Nombre} {id}" });
+
+        var cmdProductos = new SqlCommand(
+            $"SELECT * FROM {t.Productos} WHERE {t.Id} = @id ORDER BY id_producto;", cn);
+        cmdProductos.Parameters.AddWithValue("@id", id);
+        venta["productos"] = await LeerFilas(cmdProductos);
+
+        if (t.Detalle is not null)
+        {
+            var cmdDetalle = new SqlCommand(
+                $"SELECT * FROM {t.Detalle} WHERE {t.Id} = @id ORDER BY id_detalle;", cn);
+            cmdDetalle.Parameters.AddWithValue("@id", id);
+            venta["accesorios"] = await LeerFilas(cmdDetalle);
+        }
+
+        return Results.Ok(venta);
+    });
+
+    // Eliminar: sus productos, accesorios y fórmulas se borran solos (ON DELETE CASCADE). El cliente no se borra.
+    app.MapDelete(ruta + "/{id:int}", async (int id) =>
+    {
+        await using var cn = new SqlConnection(conexion);
+        await cn.OpenAsync();
+        var cmd = new SqlCommand($"DELETE FROM {t.Encabezado} WHERE {t.Id} = @id;", cn);
+        cmd.Parameters.AddWithValue("@id", id);
+        return await cmd.ExecuteNonQueryAsync() == 0
+            ? Results.NotFound(new { mensaje = $"No existe la {t.Nombre} {id}" })
+            : Results.Ok(new { mensaje = "Eliminada." });
+    });
+}
 
 
-// Si idExistente es null crea la factura; si no, la actualiza y reemplaza sus productos
-async Task<IResult> GuardarFactura(FacturaDto f, int? idExistente)
+// Si idExistente es null crea la venta; si no, la actualiza y reemplaza sus productos y accesorios
+async Task<IResult> GuardarVenta(TablasVenta t, FacturaDto f, int? idExistente)
 {
     try
     {
@@ -98,20 +187,20 @@ async Task<IResult> GuardarFactura(FacturaDto f, int? idExistente)
         int? idCliente = await GuardarCliente(cn, tx, f.Cliente);
 
         var cmd = idExistente is null
-            ? new SqlCommand(@"
-                INSERT INTO dbo.facturas (numero_factura, fecha_venta, id_cliente, total, abono, medio_pago,
+            ? new SqlCommand($@"
+                INSERT INTO {t.Encabezado} (numero_factura, fecha_venta, id_cliente, total, abono, medio_pago,
                                           fecha_entrega, hora_entrega, detalle_entrega, vendedor)
-                OUTPUT INSERTED.id_factura
+                OUTPUT INSERTED.{t.Id}
                 VALUES (@numero, @fecha, @cliente, @total, @abono, @medioPago,
                         @fechaEntrega, @horaEntrega, @detalle, @vendedor);", cn, tx)
-            : new SqlCommand(@"
-                UPDATE dbo.facturas
+            : new SqlCommand($@"
+                UPDATE {t.Encabezado}
                 SET numero_factura = @numero, fecha_venta = @fecha, id_cliente = @cliente,
                     total = @total, abono = @abono, medio_pago = @medioPago,
                     fecha_entrega = @fechaEntrega, hora_entrega = @horaEntrega,
                     detalle_entrega = @detalle, vendedor = @vendedor
-                OUTPUT INSERTED.id_factura
-                WHERE id_factura = @id;", cn, tx);
+                OUTPUT INSERTED.{t.Id}
+                WHERE {t.Id} = @id;", cn, tx);
         if (idExistente is not null) cmd.Parameters.AddWithValue("@id", idExistente);
         cmd.Parameters.AddWithValue("@numero", Valor(f.NumeroFactura));
         cmd.Parameters.AddWithValue("@fecha", (object?)f.FechaVenta ?? DBNull.Value);
@@ -123,24 +212,35 @@ async Task<IResult> GuardarFactura(FacturaDto f, int? idExistente)
         cmd.Parameters.AddWithValue("@horaEntrega", (object?)f.HoraEntrega?.ToTimeSpan() ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@detalle", Valor(f.DetalleEntrega));
         cmd.Parameters.AddWithValue("@vendedor", Valor(f.Vendedor));
-        if (await cmd.ExecuteScalarAsync() is not int idFactura)
-            return Results.NotFound(new { mensaje = "No existe la factura " + idExistente });
+        if (await cmd.ExecuteScalarAsync() is not int idVenta)
+            return Results.NotFound(new { mensaje = $"No existe la {t.Nombre} {idExistente}" });
 
-        // Al editar, los productos anteriores se borran y se guardan los del formulario
+        // Al editar, los productos y accesorios anteriores se borran y se guardan los del formulario
         if (idExistente is not null)
         {
-            var borrar = new SqlCommand("DELETE FROM dbo.factura_productos WHERE id_factura = @id;", cn, tx);
-            borrar.Parameters.AddWithValue("@id", idFactura);
+            var borrar = new SqlCommand($"DELETE FROM {t.Productos} WHERE {t.Id} = @id;", cn, tx);
+            borrar.Parameters.AddWithValue("@id", idVenta);
             await borrar.ExecuteNonQueryAsync();
+
+            if (t.Detalle is not null)
+            {
+                var borrarAcc = new SqlCommand($"DELETE FROM {t.Detalle} WHERE {t.Id} = @id;", cn, tx);
+                borrarAcc.Parameters.AddWithValue("@id", idVenta);
+                await borrarAcc.ExecuteNonQueryAsync();
+            }
         }
 
-        // Una fila por cada grupo de "Agregar otro producto"
-        foreach (var p in f.Productos ?? [])
+        // Una fila por cada grupo de "Agregar otro producto".
+        // En Accesorios la montura siempre trae un tipo elegido, así que solo se guarda
+        // si se llenó el color, la referencia o el lente.
+        var productos = (f.Productos ?? []).Where(p => !t.SoloProductosConDatos
+            || new[] { p.Color, p.Referencia, p.TipoLente }.Any(v => !string.IsNullOrWhiteSpace(v)));
+        foreach (var p in productos)
         {
-            var cmdProducto = new SqlCommand(@"
-                INSERT INTO dbo.factura_productos (id_factura, tipo_montura, color, referencia, tipo_lente)
-                VALUES (@factura, @montura, @color, @referencia, @lente);", cn, tx);
-            cmdProducto.Parameters.AddWithValue("@factura", idFactura);
+            var cmdProducto = new SqlCommand($@"
+                INSERT INTO {t.Productos} ({t.Id}, tipo_montura, color, referencia, tipo_lente)
+                VALUES (@venta, @montura, @color, @referencia, @lente);", cn, tx);
+            cmdProducto.Parameters.AddWithValue("@venta", idVenta);
             cmdProducto.Parameters.AddWithValue("@montura", Valor(p.TipoMontura));
             cmdProducto.Parameters.AddWithValue("@color", Valor(p.Color));
             cmdProducto.Parameters.AddWithValue("@referencia", Valor(p.Referencia));
@@ -148,129 +248,40 @@ async Task<IResult> GuardarFactura(FacturaDto f, int? idExistente)
             await cmdProducto.ExecuteNonQueryAsync();
         }
 
-        // Accesorios (página Acesorios.html): una fila en dbo.Accesorios por cada accesorio,
-        // unida a la factura por IdFactura. Al editar se reemplazan por los del formulario.
-        // La página de Facturación no envía accesorios (null), así que no los toca.
-        if (idExistente is not null && f.Accesorios is not null)
+        // Accesorios: solo se guardan las filas que tienen tipo de producto
+        if (t.Detalle is not null)
         {
-            var borrarAcc = new SqlCommand("DELETE FROM dbo.Accesorios WHERE IdFactura = @id;", cn, tx);
-            borrarAcc.Parameters.AddWithValue("@id", idFactura);
-            await borrarAcc.ExecuteNonQueryAsync();
-        }
-
-        // Solo se guardan las filas que tienen tipo de producto
-        foreach (var a in (f.Accesorios ?? []).Where(a => !string.IsNullOrWhiteSpace(a.TipoProducto)))
-        {
-            var cmdAccesorio = new SqlCommand(@"
-                INSERT INTO dbo.Accesorios (IdFactura, TipoProducto, Referencia, Cantidad, FechaIngreso, Observaciones)
-                VALUES (@factura, @tipo, @referencia, @cantidad, COALESCE(@fecha, CAST(GETDATE() AS DATE)), @obs);", cn, tx);
-            cmdAccesorio.Parameters.AddWithValue("@factura", idFactura);
-            cmdAccesorio.Parameters.AddWithValue("@tipo", a.TipoProducto!.Trim());
-            cmdAccesorio.Parameters.AddWithValue("@referencia", Valor(a.Referencia));
-            cmdAccesorio.Parameters.AddWithValue("@cantidad", a.Cantidad is > 0 ? a.Cantidad.Value : 1);
-            cmdAccesorio.Parameters.AddWithValue("@fecha", (object?)f.FechaVenta ?? DBNull.Value);
-            cmdAccesorio.Parameters.AddWithValue("@obs", string.IsNullOrWhiteSpace(f.NumeroFactura)
-                ? DBNull.Value : "Factura No. " + f.NumeroFactura.Trim());
-            await cmdAccesorio.ExecuteNonQueryAsync();
+            foreach (var a in (f.Accesorios ?? []).Where(a => !string.IsNullOrWhiteSpace(a.TipoProducto)))
+            {
+                var cmdAccesorio = new SqlCommand($@"
+                    INSERT INTO {t.Detalle} ({t.Id}, tipo_producto, referencia, cantidad)
+                    VALUES (@venta, @tipo, @referencia, @cantidad);", cn, tx);
+                cmdAccesorio.Parameters.AddWithValue("@venta", idVenta);
+                cmdAccesorio.Parameters.AddWithValue("@tipo", a.TipoProducto!.Trim());
+                cmdAccesorio.Parameters.AddWithValue("@referencia", Valor(a.Referencia));
+                cmdAccesorio.Parameters.AddWithValue("@cantidad", a.Cantidad is > 0 ? a.Cantidad.Value : 1);
+                await cmdAccesorio.ExecuteNonQueryAsync();
+            }
         }
 
         await tx.CommitAsync();
-        return Results.Ok(new { idFactura, mensaje = idExistente is null ? "Factura guardada." : "Factura actualizada." });
+        var hecho = idExistente is null ? "guardada" : "actualizada";
+        return Results.Ok(new { idFactura = idVenta, mensaje = $"{char.ToUpper(t.Nombre[0])}{t.Nombre[1..]} {hecho}." });
     }
     catch (SqlException ex) when (ex.Number == 547)
     {
         // 547 = no cumple una regla de la tabla (CHECK)
-        var mensaje = ex.Message.Contains("chk_abono_no_mayor")
+        var mensaje = ex.Message.Contains("abono_no_mayor")
             ? "El abono no puede ser mayor que el total."
             : "Algún valor no es válido: " + ex.Message;
         return Results.BadRequest(new { mensaje });
     }
     catch (SqlException ex)
     {
-        app.Logger.LogError(ex, "Error de SQL Server al guardar la factura");
+        app.Logger.LogError(ex, "Error de SQL Server al guardar la {Nombre}", t.Nombre);
         return Results.Json(new { mensaje = "No se pudo guardar en SQL Server: " + ex.Message }, statusCode: 500);
     }
 }
-
-
-// ---------- Buscar facturas por número, documento o nombre del cliente ----------
-app.MapGet("/api/facturas/buscar", async (string? texto) =>
-{
-    if (string.IsNullOrWhiteSpace(texto)) return Results.Ok(new List<Dictionary<string, object?>>());
-
-    await using var cn = new SqlConnection(conexion);
-    await cn.OpenAsync();
-    var cmd = new SqlCommand(@"
-        SELECT TOP 30 f.id_factura, f.numero_factura, f.fecha_venta, c.nombre AS cliente,
-               c.tipo_documento, c.documento, f.total, f.saldo
-        FROM dbo.facturas f
-        LEFT JOIN dbo.clientes c ON c.id_cliente = f.id_cliente
-        WHERE f.numero_factura = @texto
-           OR c.documento = @texto
-           OR c.nombre LIKE '%' + @texto + '%'
-        ORDER BY f.id_factura DESC;", cn);
-    cmd.Parameters.AddWithValue("@texto", texto.Trim());
-    return Results.Ok(await LeerFilas(cmd));
-});
-
-
-// ---------- Listar las últimas facturas ----------
-app.MapGet("/api/facturas", async () =>
-{
-    await using var cn = new SqlConnection(conexion);
-    await cn.OpenAsync();
-    var cmd = new SqlCommand(@"
-        SELECT TOP 50 f.id_factura, f.numero_factura, f.fecha_venta, c.nombre AS cliente,
-               f.total, f.abono, f.saldo,
-               (SELECT COUNT(*) FROM dbo.factura_productos p WHERE p.id_factura = f.id_factura) AS productos
-        FROM dbo.facturas f
-        LEFT JOIN dbo.clientes c ON c.id_cliente = f.id_cliente
-        ORDER BY f.id_factura DESC;", cn);
-    return Results.Ok(await LeerFilas(cmd));
-});
-
-
-// ---------- Ver una factura con sus productos ----------
-app.MapGet("/api/facturas/{id:int}", async (int id) =>
-{
-    await using var cn = new SqlConnection(conexion);
-    await cn.OpenAsync();
-
-    var cmd = new SqlCommand(@"
-        SELECT f.*, c.nombre AS cliente, c.tipo_documento, c.documento, c.telefono, c.email
-        FROM dbo.facturas f
-        LEFT JOIN dbo.clientes c ON c.id_cliente = f.id_cliente
-        WHERE f.id_factura = @id;", cn);
-    cmd.Parameters.AddWithValue("@id", id);
-    var factura = (await LeerFilas(cmd)).FirstOrDefault();
-    if (factura is null) return Results.NotFound(new { mensaje = "No existe la factura " + id });
-
-    var cmdProductos = new SqlCommand(
-        "SELECT * FROM dbo.factura_productos WHERE id_factura = @id ORDER BY id_producto;", cn);
-    cmdProductos.Parameters.AddWithValue("@id", id);
-    factura["productos"] = await LeerFilas(cmdProductos);
-
-    var cmdAccesorios = new SqlCommand(
-        "SELECT * FROM dbo.Accesorios WHERE IdFactura = @id ORDER BY IdAccesorio;", cn);
-    cmdAccesorios.Parameters.AddWithValue("@id", id);
-    factura["accesorios"] = await LeerFilas(cmdAccesorios);
-
-    return Results.Ok(factura);
-});
-
-
-// ---------- Eliminar una factura ----------
-// Sus productos, accesorios y fórmulas se borran solos (ON DELETE CASCADE). El cliente no se borra.
-app.MapDelete("/api/facturas/{id:int}", async (int id) =>
-{
-    await using var cn = new SqlConnection(conexion);
-    await cn.OpenAsync();
-    var cmd = new SqlCommand("DELETE FROM dbo.facturas WHERE id_factura = @id;", cn);
-    cmd.Parameters.AddWithValue("@id", id);
-    return await cmd.ExecuteNonQueryAsync() == 0
-        ? Results.NotFound(new { mensaje = "No existe la factura " + id })
-        : Results.Ok(new { mensaje = "Factura eliminada." });
-});
 
 
 // ---------- Buscar una factura por número y traer sus fórmulas y productos ----------
@@ -618,24 +629,24 @@ app.MapDelete("/api/accesorios/{id:int}", async (int id) =>
 app.Run();
 
 
-// Agrega a dbo.Accesorios la columna IdFactura (si aún no la tiene) para unir cada
-// accesorio vendido con su factura. No borra datos. Es lo mismo que hace Accesorios/base_datos.sql.
+// Al encender el servidor ejecuta Accesorios/base_datos.sql: crea las tablas de accesorios
+// (inventario y ventas) que falten. El script no borra datos y se puede ejecutar muchas veces.
 async Task PrepararTablaAccesorios()
 {
+    var archivo = Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", "Accesorios", "base_datos.sql"));
     try
     {
+        var lotes = System.Text.RegularExpressions.Regex.Split(
+            await File.ReadAllTextAsync(archivo), @"^\s*GO\s*$",
+            System.Text.RegularExpressions.RegexOptions.Multiline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
         await using var cn = new SqlConnection(conexion);
         await cn.OpenAsync();
-        var cmd = new SqlCommand(@"
-            IF OBJECT_ID(N'dbo.Accesorios', N'U') IS NOT NULL
-               AND COL_LENGTH(N'dbo.Accesorios', N'IdFactura') IS NULL
-                ALTER TABLE dbo.Accesorios ADD IdFactura INT NULL
-                    CONSTRAINT FK_Accesorios_Facturas FOREIGN KEY REFERENCES dbo.facturas (id_factura) ON DELETE CASCADE;", cn);
-        await cmd.ExecuteNonQueryAsync();
+        foreach (var lote in lotes.Where(l => !string.IsNullOrWhiteSpace(l)))
+            await new SqlCommand(lote, cn).ExecuteNonQueryAsync();
     }
-    catch (SqlException ex)
+    catch (Exception ex) when (ex is SqlException or IOException)
     {
-        app.Logger.LogError(ex, "No se pudo preparar la tabla dbo.Accesorios. Ejecute Accesorios/base_datos.sql en SQL Server.");
+        app.Logger.LogError(ex, "No se pudieron preparar las tablas de accesorios. Ejecute Accesorios/base_datos.sql en SQL Server.");
     }
 }
 
@@ -707,6 +718,9 @@ record ClienteDto(string? Nombre, string? TipoDocumento, string? Documento, stri
 record ProductoDto(string? TipoMontura, string? Color, string? Referencia, string? TipoLente);
 
 record AccesorioDto(string? TipoProducto, string? Referencia, int? Cantidad);
+
+// Tablas donde guarda cada página: Facturación o Accesorios
+record TablasVenta(string Encabezado, string Id, string Productos, string? Detalle, string Nombre, bool SoloProductosConDatos);
 
 record FacturaDto(
     string? NumeroFactura,

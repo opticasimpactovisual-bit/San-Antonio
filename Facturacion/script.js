@@ -35,6 +35,10 @@
             return texto === "" ? null : texto;
         }
 
+        // Dirección del servidor donde guarda esta página. Accesorios usa la suya
+        // (<body data-api="/api/ventas-accesorios">) para guardar en sus propias tablas.
+        const API = document.body.dataset.api || "/api/facturas";
+
         // Código interno de la factura que se está editando (null = factura nueva)
         let idFacturaEditando = null;
 
@@ -63,9 +67,8 @@
                         tipoLente: grupo.querySelector("textarea").value.trim() || null
                     };
                 }),
-                // Un accesorio por cada fila de "Agregar accesorio" (las filas sin tipo no se guardan)
-                // Se guardan en la tabla dbo.Accesorios. La página de Facturación no tiene esta
-                // sección: ahí no se envía nada para no borrar los accesorios al editar.
+                // Un accesorio por cada fila de "Agregar accesorio" (las filas sin tipo no se guardan).
+                // Solo la página de Accesorios tiene esta sección.
                 accesorios: document.getElementById("accesorios")
                     ? Array.from(document.querySelectorAll(".accesorio")).map(function (fila) {
                         return {
@@ -83,7 +86,7 @@
 
             try {
                 const editando = idFacturaEditando !== null;
-                const respuesta = await fetch(editando ? "/api/facturas/" + idFacturaEditando : "/api/facturas", {
+                const respuesta = await fetch(editando ? API + "/" + idFacturaEditando : API, {
                     method: editando ? "PUT" : "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(factura)
@@ -101,7 +104,7 @@
                 }
                 limpiarFormulario();
             } catch (error) {
-                alert("No hay conexión con el servidor. Inicie el servidor y abra la página en http://localhost:5000/Facturacion/Facturacion.html");
+                alert("No hay conexión con el servidor. Inicie el servidor y abra la página desde http://localhost:5000");
             }
         }
 
@@ -168,10 +171,10 @@
 
             let lista;
             try {
-                const respuesta = await fetch("/api/facturas/buscar?texto=" + encodeURIComponent(texto));
+                const respuesta = await fetch(API + "/buscar?texto=" + encodeURIComponent(texto));
                 lista = await respuesta.json();
             } catch (error) {
-                alert("No hay conexión con el servidor. Inicie el servidor y abra la página en http://localhost:5000/Facturacion/Facturacion.html");
+                alert("No hay conexión con el servidor. Inicie el servidor y abra la página desde http://localhost:5000");
                 return;
             }
 
@@ -225,14 +228,14 @@
             }
 
             try {
-                const respuesta = await fetch("/api/facturas/" + f.id_factura, { method: "DELETE" });
+                const respuesta = await fetch(API + "/" + f.id_factura, { method: "DELETE" });
                 const datos = await respuesta.json();
                 if (!respuesta.ok) {
                     alert("No se eliminó la factura. " + datos.mensaje);
                     return;
                 }
             } catch (error) {
-                alert("No hay conexión con el servidor. Inicie el servidor y abra la página en http://localhost:5000/Facturacion/Facturacion.html");
+                alert("No hay conexión con el servidor. Inicie el servidor y abra la página desde http://localhost:5000");
                 return;
             }
 
@@ -248,14 +251,14 @@
         async function cargarFactura(id) {
             let f;
             try {
-                const respuesta = await fetch("/api/facturas/" + id);
+                const respuesta = await fetch(API + "/" + id);
                 f = await respuesta.json();
                 if (!respuesta.ok) {
                     alert(f.mensaje);
                     return;
                 }
             } catch (error) {
-                alert("No hay conexión con el servidor. Inicie el servidor y abra la página en http://localhost:5000/Facturacion/Facturacion.html");
+                alert("No hay conexión con el servidor. Inicie el servidor y abra la página desde http://localhost:5000");
                 return;
             }
 
@@ -296,9 +299,9 @@
             document.querySelectorAll(".accesorio").forEach(function (fila, i) {
                 const a = listaAccesorios[i];
                 if (!a) return;
-                elegir(fila.querySelector("select"), a.TipoProducto);
-                fila.querySelector("[id^='AccReferencia']").value = a.Referencia || "";
-                fila.querySelector("[id^='AccCantidad']").value = a.Cantidad || "";
+                elegir(fila.querySelector("select"), a.tipo_producto);
+                fila.querySelector("[id^='AccReferencia']").value = a.referencia || "";
+                fila.querySelector("[id^='AccCantidad']").value = a.cantidad || "";
             });
 
             document.getElementById("FechaEntrega").value = soloFecha(f.fecha_entrega);
