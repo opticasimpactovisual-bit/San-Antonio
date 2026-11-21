@@ -18,7 +18,7 @@ BEGIN
 
         CONSTRAINT PK_Accesorios PRIMARY KEY (IdAccesorio),
         CONSTRAINT CK_Accesorios_Tipo CHECK (TipoProducto IN (
-            N'Plaquetas', N'Tornillos', N'Pañitos', N'Líquido antiempañante',
+            N'Estuche', N'Plaquetas', N'Tornillos', N'Pañitos', N'Líquido antiempañante',
             N'Terminales', N'Cordón', N'Cadenas', N'Colas de ratón',
             N'Reparación', N'Otros')),
         CONSTRAINT CK_Accesorios_Cantidad CHECK (Cantidad >= 0),
@@ -27,5 +27,17 @@ BEGIN
     );
 
     CREATE INDEX IX_Accesorios_Tipo ON dbo.Accesorios (TipoProducto);
+END
+GO
+
+-- Bases de datos creadas antes: actualizar la lista para aceptar 'Estuche'
+IF EXISTS (SELECT 1 FROM sys.check_constraints
+           WHERE name = 'CK_Accesorios_Tipo' AND definition NOT LIKE '%Estuche%')
+BEGIN
+    ALTER TABLE dbo.Accesorios DROP CONSTRAINT CK_Accesorios_Tipo;
+    ALTER TABLE dbo.Accesorios ADD CONSTRAINT CK_Accesorios_Tipo CHECK (TipoProducto IN (
+        N'Estuche', N'Plaquetas', N'Tornillos', N'Pañitos', N'Líquido antiempañante',
+        N'Terminales', N'Cordón', N'Cadenas', N'Colas de ratón',
+        N'Reparación', N'Otros'));
 END
 GO

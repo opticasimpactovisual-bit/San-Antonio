@@ -124,13 +124,25 @@ CREATE TABLE dbo.factura_accesorios (
                     ON DELETE CASCADE,                     -- si se borra la factura, se borran sus accesorios
     tipo_producto   NVARCHAR(40)                           -- TipoAccesorio
                     CONSTRAINT chk_tipo_accesorio CHECK (tipo_producto IN (
-                        N'Plaquetas', N'Tornillos', N'Pañitos', N'Líquido antiempañante',
+                        N'Estuche', N'Plaquetas', N'Tornillos', N'Pañitos', N'Líquido antiempañante',
                         N'Terminales', N'Cordón', N'Cadenas', N'Colas de ratón',
                         N'Reparación', N'Otros')),
     referencia      NVARCHAR(60),                          -- AccReferencia
     cantidad        INT NOT NULL DEFAULT 1                 -- AccCantidad
                     CONSTRAINT chk_cantidad_accesorio CHECK (cantidad > 0)
 );
+GO
+
+-- Bases de datos creadas antes: actualizar la lista para aceptar 'Estuche'
+IF EXISTS (SELECT 1 FROM sys.check_constraints
+           WHERE name = 'chk_tipo_accesorio' AND definition NOT LIKE '%Estuche%')
+BEGIN
+    ALTER TABLE dbo.factura_accesorios DROP CONSTRAINT chk_tipo_accesorio;
+    ALTER TABLE dbo.factura_accesorios ADD CONSTRAINT chk_tipo_accesorio CHECK (tipo_producto IN (
+        N'Estuche', N'Plaquetas', N'Tornillos', N'Pañitos', N'Líquido antiempañante',
+        N'Terminales', N'Cordón', N'Cadenas', N'Colas de ratón',
+        N'Reparación', N'Otros'));
+END
 GO
 
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'idx_accesorios_factura')
