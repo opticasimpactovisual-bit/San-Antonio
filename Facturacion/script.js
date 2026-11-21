@@ -64,13 +64,17 @@
                     };
                 }),
                 // Un accesorio por cada fila de "Agregar accesorio" (las filas sin tipo no se guardan)
-                accesorios: Array.from(document.querySelectorAll(".accesorio")).map(function (fila) {
-                    return {
-                        tipoProducto: fila.querySelector("select").value || null,
-                        referencia: fila.querySelector("[id^='AccReferencia']").value.trim() || null,
-                        cantidad: Number(fila.querySelector("[id^='AccCantidad']").value) || 1
-                    };
-                }).filter(function (a) { return a.tipoProducto; }),
+                // Se guardan en la tabla dbo.Accesorios. La página de Facturación no tiene esta
+                // sección: ahí no se envía nada para no borrar los accesorios al editar.
+                accesorios: document.getElementById("accesorios")
+                    ? Array.from(document.querySelectorAll(".accesorio")).map(function (fila) {
+                        return {
+                            tipoProducto: fila.querySelector("select").value || null,
+                            referencia: fila.querySelector("[id^='AccReferencia']").value.trim() || null,
+                            cantidad: Number(fila.querySelector("[id^='AccCantidad']").value) || 1
+                        };
+                    }).filter(function (a) { return a.tipoProducto; })
+                    : undefined,
                 fechaEntrega: valor("FechaEntrega"),
                 horaEntrega: valor("HoraEntrega"),
                 detalleEntrega: valor("Detalle"),
@@ -292,9 +296,9 @@
             document.querySelectorAll(".accesorio").forEach(function (fila, i) {
                 const a = listaAccesorios[i];
                 if (!a) return;
-                elegir(fila.querySelector("select"), a.tipo_producto);
-                fila.querySelector("[id^='AccReferencia']").value = a.referencia || "";
-                fila.querySelector("[id^='AccCantidad']").value = a.cantidad || "";
+                elegir(fila.querySelector("select"), a.TipoProducto);
+                fila.querySelector("[id^='AccReferencia']").value = a.Referencia || "";
+                fila.querySelector("[id^='AccCantidad']").value = a.Cantidad || "";
             });
 
             document.getElementById("FechaEntrega").value = soloFecha(f.fecha_entrega);

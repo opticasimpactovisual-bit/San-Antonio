@@ -28,6 +28,8 @@ var app = builder.Build();
 var conexion = builder.Configuration.GetConnectionString("Optica")
     ?? throw new InvalidOperationException("Falta la cadena de conexión 'Optica' en appsettings.json");
 
+await PrepararTablaAccesorios();
+
 // La página de inicio (carpeta Inicio) se abre en http://localhost:5000 y lleva a todos los programas
 var carpetaInicio = new PhysicalFileProvider(
     Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", "Inicio")));
@@ -146,10 +148,12 @@ async Task<IResult> GuardarFactura(FacturaDto f, int? idExistente)
             await cmdProducto.ExecuteNonQueryAsync();
         }
 
-        // Accesorios: al editar se reemplazan por los del formulario
-        if (idExistente is not null)
+        // Accesorios (página Acesorios.html): una fila en dbo.Accesorios por cada accesorio,
+        // unida a la factura por IdFactura. Al editar se reemplazan por los del formulario.
+        // La página de Facturación no envía accesorios (null), así que no los toca.
+        if (idExistente is not null && f.Accesorios is not null)
         {
-            var borrarAcc = new SqlCommand("DELETE FROM dbo.factura_accesorios WHERE id_factura = @id;", cn, tx);
+            var borrarAcc = new SqlCommand("DELETE FROM dbo.Accesorios WHERE IdFactura = @id;", cn, tx);
             borrarAcc.Parameters.AddWithValue("@id", idFactura);
             await borrarAcc.ExecuteNonQueryAsync();
         }
@@ -158,12 +162,15 @@ async Task<IResult> GuardarFactura(FacturaDto f, int? idExistente)
         foreach (var a in (f.Accesorios ?? []).Where(a => !string.IsNullOrWhiteSpace(a.TipoProducto)))
         {
             var cmdAccesorio = new SqlCommand(@"
-                INSERT INTO dbo.factura_accesorios (id_factura, tipo_producto, referencia, cantidad)
-                VALUES (@factura, @tipo, @referencia, @cantidad);", cn, tx);
+                INSERT INTO dbo.Accesorios (IdFactura, TipoProducto, Referencia, Cantidad, FechaIngreso, Observaciones)
+                VALUES (@factura, @tipo, @referencia, @cantidad, COALESCE(@fecha, CAST(GETDATE() AS DATE)), @obs);", cn, tx);
             cmdAccesorio.Parameters.AddWithValue("@factura", idFactura);
             cmdAccesorio.Parameters.AddWithValue("@tipo", a.TipoProducto!.Trim());
             cmdAccesorio.Parameters.AddWithValue("@referencia", Valor(a.Referencia));
-            cmdAccesorio.Parameters.AddWithValue("@cantidad", a.Cantidad is > 0 ? a.Cantidad : 1);
+            cmdAccesorio.Parameters.AddWithValue("@cantidad", a.Cantidad is > 0 ? a.Cantidad.Value : 1);
+            cmdAccesorio.Parameters.AddWithValue("@fecha", (object?)f.FechaVenta ?? DBNull.Value);
+            cmdAccesorio.Parameters.AddWithValue("@obs", string.IsNullOrWhiteSpace(f.NumeroFactura)
+                ? DBNull.Value : "Factura No. " + f.NumeroFactura.Trim());
             await cmdAccesorio.ExecuteNonQueryAsync();
         }
 
@@ -244,7 +251,7 @@ app.MapGet("/api/facturas/{id:int}", async (int id) =>
     factura["productos"] = await LeerFilas(cmdProductos);
 
     var cmdAccesorios = new SqlCommand(
-        "SELECT * FROM dbo.factura_accesorios WHERE id_factura = @id ORDER BY id_accesorio;", cn);
+        "SELECT * FROM dbo.Accesorios WHERE IdFactura = @id ORDER BY IdAccesorio;", cn);
     cmdAccesorios.Parameters.AddWithValue("@id", id);
     factura["accesorios"] = await LeerFilas(cmdAccesorios);
 
@@ -253,7 +260,7 @@ app.MapGet("/api/facturas/{id:int}", async (int id) =>
 
 
 // ---------- Eliminar una factura ----------
-// Sus productos y sus fórmulas se borran solos (ON DELETE CASCADE). El cliente no se borra.
+// Sus productos, accesorios y fórmulas se borran solos (ON DELETE CASCADE). El cliente no se borra.
 app.MapDelete("/api/facturas/{id:int}", async (int id) =>
 {
     await using var cn = new SqlConnection(conexion);
@@ -609,6 +616,28 @@ app.MapDelete("/api/accesorios/{id:int}", async (int id) =>
 });
 
 app.Run();
+
+
+// Agrega a dbo.Accesorios la columna IdFactura (si aún no la tiene) para unir cada
+// accesorio vendido con su factura. No borra datos. Es lo mismo que hace Accesorios/base_datos.sql.
+async Task PrepararTablaAccesorios()
+{
+    try
+    {
+        await using var cn = new SqlConnection(conexion);
+        await cn.OpenAsync();
+        var cmd = new SqlCommand(@"
+            IF OBJECT_ID(N'dbo.Accesorios', N'U') IS NOT NULL
+               AND COL_LENGTH(N'dbo.Accesorios', N'IdFactura') IS NULL
+                ALTER TABLE dbo.Accesorios ADD IdFactura INT NULL
+                    CONSTRAINT FK_Accesorios_Facturas FOREIGN KEY REFERENCES dbo.facturas (id_factura) ON DELETE CASCADE;", cn);
+        await cmd.ExecuteNonQueryAsync();
+    }
+    catch (SqlException ex)
+    {
+        app.Logger.LogError(ex, "No se pudo preparar la tabla dbo.Accesorios. Ejecute Accesorios/base_datos.sql en SQL Server.");
+    }
+}
 
 
 // ---------- Funciones de ayuda ----------
