@@ -7,19 +7,20 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
-    <link rel="stylesheet" href="Formulas.css?v=5">
+    <link rel="stylesheet" href="Formulas.css?v=6">
 </head>
 <body>
 
 <a href="/" class="volver-inicio">&larr; Inicio</a>
 
-<!-- Buscar por número de factura (no sale al imprimir) -->
+<!-- Buscar facturas, ventas de accesorios o clientes registrados (no sale al imprimir) -->
 <div class="buscador">
     <div class="barra-busqueda">
-        <label for="numero_factura">Número de factura</label>
-        <input type="text" id="numero_factura" name="numero_factura" placeholder="Ingrese el número de factura">
+        <label for="numero_factura">Buscar</label>
+        <input type="search" id="numero_factura" name="numero_factura" placeholder="Número de factura o venta de accesorios, documento o nombre del cliente">
         <input type="submit" value="Buscar" id="buscar" class="boton-principal">
     </div>
+    <ul id="resultados" hidden></ul>
     <p id="factura_encontrada" class="factura-encontrada" hidden></p>
 </div>
 
@@ -105,6 +106,6 @@
 
 </main>
 
-<script src="script.js?v=2"></script>
+<script src="script.js?v=3"></script>
 </body>
 </html>

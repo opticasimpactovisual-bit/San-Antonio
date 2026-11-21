@@ -39,4 +39,21 @@ IF EXISTS (SELECT 1 FROM sys.columns
     ALTER TABLE dbo.formulas ALTER COLUMN creado_en DATETIME2(0) NULL;
 GO
 
+-- Las fórmulas también se pueden unir a una venta de accesorios o directamente a un cliente.
+-- (Ejecute antes Accesorios/base_datos.sql, que crea dbo.ventas_accesorios.)
+IF COL_LENGTH(N'dbo.formulas', N'id_venta_accesorios') IS NULL
+    ALTER TABLE dbo.formulas ADD id_venta_accesorios INT NULL
+        CONSTRAINT fk_formula_venta_acc REFERENCES dbo.ventas_accesorios (id_venta)
+        ON DELETE CASCADE;
+GO
+IF COL_LENGTH(N'dbo.formulas', N'id_cliente') IS NULL
+    ALTER TABLE dbo.formulas ADD id_cliente INT NULL
+        CONSTRAINT fk_formula_cliente REFERENCES dbo.clientes (id_cliente);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'idx_formulas_venta_acc')
+    CREATE INDEX idx_formulas_venta_acc ON dbo.formulas (id_venta_accesorios);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'idx_formulas_cliente')
+    CREATE INDEX idx_formulas_cliente ON dbo.formulas (id_cliente);
+GO
+
 SELECT * FROM dbo.formulas;

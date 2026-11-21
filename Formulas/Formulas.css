@@ -220,6 +220,50 @@ button:focus-visible, input[type="submit"]:focus-visible { outline: 2px solid va
 }
 .barra-busqueda label { font-weight: 600; color: var(--gris); }
 
+/* Resultados de la búsqueda: facturas, ventas de accesorios y clientes */
+#resultados {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+    background: var(--papel);
+    border-radius: 6px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .08);
+    max-height: 320px;
+    overflow-y: auto;
+}
+#resultados li + li { border-top: 1px solid var(--linea); }
+#resultados .abrir {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 11ch 9ch 11ch 1fr auto;
+    gap: 12px;
+    align-items: center;
+    text-align: left;
+    background: none;
+    border: 0;
+    border-radius: 0;
+    font: inherit;
+    font-weight: 400;
+    color: var(--tinta);
+    padding: 10px 14px;
+    cursor: pointer;
+}
+#resultados .abrir:hover { background: var(--verde-suave); }
+#resultados .tipo {
+    justify-self: start;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    background: var(--verde-suave);
+    color: var(--verde);
+}
+#resultados .tipo.accesorios { background: #e6f5f6; color: #11777b; }
+#resultados .tipo.cliente { background: #f1f1f1; color: var(--gris); }
+#resultados .num { font-family: var(--letra-numeros); font-weight: 500; color: var(--verde); }
+#resultados .fec, #resultados .cnt { font-family: var(--letra-numeros); color: var(--gris); font-size: 13px; }
+#resultados .vacio { padding: 10px 14px; color: var(--gris); }
+
 /* Factura encontrada al buscar */
 .factura-encontrada {
     margin: 8px 0 0;
@@ -239,6 +283,7 @@ button:focus-visible, input[type="submit"]:focus-visible { outline: 2px solid va
     .medidas { grid-template-columns: 1fr 1fr; }
     .barra-busqueda { grid-template-columns: 1fr auto; }
     .barra-busqueda label { grid-column: 1 / -1; }
+    #resultados .abrir { grid-template-columns: auto 1fr; }
 }
 
 /* ---------- Impresión ---------- */

@@ -10,6 +10,8 @@
 //   /api/ventas-accesorios ...          lo mismo que /api/facturas, para las ventas de Acesorios.html
 //                                       (tablas ventas_accesorios, venta_accesorios_detalle y venta_accesorios_productos)
 //   GET  /api/formulas/factura?numero=.. busca una factura por número y trae sus fórmulas
+//   GET  /api/formulas/buscar?texto=..  busca facturas, ventas de accesorios y clientes registrados
+//   GET  /api/formulas/{tipo}/{id}      trae las fórmulas de una factura, venta de accesorios o cliente
 //   POST /api/formulas                  guarda las fórmulas de la página Formulas_clientes.html
 //   GET  /api/trazabilidad/buscar?orden=.. busca las planillas de un número de orden
 //   POST /api/trazabilidad              guarda una planilla de la página trasavilidad.html
@@ -30,7 +32,7 @@ var app = builder.Build();
 var conexion = builder.Configuration.GetConnectionString("Optica")
     ?? throw new InvalidOperationException("Falta la cadena de conexión 'Optica' en appsettings.json");
 
-await PrepararTablaAccesorios();
+await PrepararTablas();
 
 // La página de inicio (carpeta Inicio) se abre en http://localhost:5000 y lleva a todos los programas
 var carpetaInicio = new PhysicalFileProvider(
@@ -319,10 +321,97 @@ app.MapGet("/api/formulas/factura", async (string? numero) =>
 });
 
 
+// ---------- Buscar facturas, ventas de accesorios y clientes para la página de fórmulas ----------
+// Busca por número, documento o nombre del cliente. Cada resultado dice su tipo:
+// 'factura', 'accesorios' o 'cliente'.
+app.MapGet("/api/formulas/buscar", async (string? texto) =>
+{
+    if (string.IsNullOrWhiteSpace(texto)) return Results.Ok(new List<Dictionary<string, object?>>());
+
+    await using var cn = new SqlConnection(conexion);
+    await cn.OpenAsync();
+    var cmd = new SqlCommand(@"
+        SELECT * FROM (
+            SELECT TOP 15 'factura' AS tipo, f.id_factura AS id, f.numero_factura AS numero, f.fecha_venta AS fecha,
+                   c.nombre AS cliente, c.tipo_documento, c.documento,
+                   (SELECT COUNT(*) FROM dbo.formulas fo WHERE fo.id_factura = f.id_factura) AS formulas,
+                   1 AS orden, f.id_factura AS orden_id
+            FROM dbo.facturas f
+            LEFT JOIN dbo.clientes c ON c.id_cliente = f.id_cliente
+            WHERE f.numero_factura = @texto OR c.documento = @texto OR c.nombre LIKE '%' + @texto + '%'
+            ORDER BY f.id_factura DESC
+        ) facturas
+        UNION ALL
+        SELECT * FROM (
+            SELECT TOP 15 'accesorios' AS tipo, v.id_venta AS id, v.numero_factura AS numero, v.fecha_venta AS fecha,
+                   c.nombre AS cliente, c.tipo_documento, c.documento,
+                   (SELECT COUNT(*) FROM dbo.formulas fo WHERE fo.id_venta_accesorios = v.id_venta) AS formulas,
+                   2 AS orden, v.id_venta AS orden_id
+            FROM dbo.ventas_accesorios v
+            LEFT JOIN dbo.clientes c ON c.id_cliente = v.id_cliente
+            WHERE v.numero_factura = @texto OR c.documento = @texto OR c.nombre LIKE '%' + @texto + '%'
+            ORDER BY v.id_venta DESC
+        ) ventas
+        UNION ALL
+        SELECT * FROM (
+            SELECT TOP 15 'cliente' AS tipo, c.id_cliente AS id, NULL AS numero, NULL AS fecha,
+                   c.nombre AS cliente, c.tipo_documento, c.documento,
+                   (SELECT COUNT(*) FROM dbo.formulas fo WHERE fo.id_cliente = c.id_cliente
+                       AND fo.id_factura IS NULL AND fo.id_venta_accesorios IS NULL) AS formulas,
+                   3 AS orden, c.id_cliente AS orden_id
+            FROM dbo.clientes c
+            WHERE c.documento = @texto OR c.nombre LIKE '%' + @texto + '%'
+            ORDER BY c.nombre
+        ) clientes
+        ORDER BY orden, orden_id DESC;", cn);
+    cmd.Parameters.AddWithValue("@texto", texto.Trim());
+    return Results.Ok(await LeerFilas(cmd));
+});
+
+
+// ---------- Traer las fórmulas de una factura, una venta de accesorios o un cliente ----------
+// Para un cliente se traen las fórmulas guardadas directamente a su nombre (sin factura ni venta).
+app.MapGet("/api/formulas/{tipo}/{id:int}", async (string tipo, int id) =>
+{
+    var (encabezado, filtro) = tipo switch
+    {
+        "factura" => (@"SELECT f.id_factura AS id, f.numero_factura AS numero, f.fecha_venta AS fecha, c.nombre AS cliente
+                        FROM dbo.facturas f LEFT JOIN dbo.clientes c ON c.id_cliente = f.id_cliente
+                        WHERE f.id_factura = @id;",
+                      "id_factura = @id"),
+        "accesorios" => (@"SELECT v.id_venta AS id, v.numero_factura AS numero, v.fecha_venta AS fecha, c.nombre AS cliente
+                           FROM dbo.ventas_accesorios v LEFT JOIN dbo.clientes c ON c.id_cliente = v.id_cliente
+                           WHERE v.id_venta = @id;",
+                         "id_venta_accesorios = @id"),
+        "cliente" => (@"SELECT c.id_cliente AS id, NULL AS numero, NULL AS fecha, c.nombre AS cliente
+                        FROM dbo.clientes c WHERE c.id_cliente = @id;",
+                      "id_cliente = @id AND id_factura IS NULL AND id_venta_accesorios IS NULL"),
+        _ => (null, null)
+    };
+    if (encabezado is null) return Results.BadRequest(new { mensaje = "Tipo de búsqueda no válido." });
+
+    await using var cn = new SqlConnection(conexion);
+    await cn.OpenAsync();
+    var cmd = new SqlCommand(encabezado, cn);
+    cmd.Parameters.AddWithValue("@id", id);
+    var registro = (await LeerFilas(cmd)).FirstOrDefault();
+    if (registro is null) return Results.NotFound(new { mensaje = "No se encontró el registro." });
+    registro["tipo"] = tipo;
+
+    var cmdFormulas = new SqlCommand($"SELECT * FROM dbo.formulas WHERE {filtro} ORDER BY id_formula;", cn);
+    cmdFormulas.Parameters.AddWithValue("@id", id);
+    registro["formulas"] = await LeerFilas(cmdFormulas);
+    return Results.Ok(registro);
+});
+
+
 // ---------- Guardar las fórmulas de la página ----------
-//   IdFactura lleno      -> la factura se buscó: sus fórmulas se reemplazan por las del formulario
-//   solo NumeroFactura   -> se busca la factura y las fórmulas se agregan a las que ya tenga
-//   ninguno de los dos   -> las fórmulas se guardan sin factura
+//   IdFactura lleno          -> sus fórmulas se reemplazan por las del formulario
+//   IdVentaAccesorios lleno  -> lo mismo, para una venta de accesorios
+//   IdCliente lleno (solo)   -> se reemplazan las fórmulas guardadas directamente a nombre del cliente
+//   solo NumeroFactura       -> se busca la factura y las fórmulas se agregan a las que ya tenga
+//   ninguno                  -> las fórmulas se guardan sin factura
+// La fórmula también guarda el cliente de la factura o venta, para tener el historial del cliente.
 app.MapPost("/api/formulas", async (GuardarFormulasDto d) =>
 {
     try
@@ -332,13 +421,31 @@ app.MapPost("/api/formulas", async (GuardarFormulasDto d) =>
         await using var tx = (SqlTransaction)await cn.BeginTransactionAsync();
 
         int? idFactura = d.IdFactura;
-        if (idFactura is not null)
+        int? idVentaAcc = idFactura is null ? d.IdVentaAccesorios : null;
+        int? idCliente = idFactura is null && idVentaAcc is null ? d.IdCliente : null;
+
+        // Borra las fórmulas anteriores del registro elegido y toma el cliente de la factura o venta
+        var (borrarSql, clienteSql, idElegido) =
+            idFactura is not null ? ("DELETE FROM dbo.formulas WHERE id_factura = @id;",
+                                     "SELECT id_cliente FROM dbo.facturas WHERE id_factura = @id;", idFactura)
+            : idVentaAcc is not null ? ("DELETE FROM dbo.formulas WHERE id_venta_accesorios = @id;",
+                                        "SELECT id_cliente FROM dbo.ventas_accesorios WHERE id_venta = @id;", idVentaAcc)
+            : idCliente is not null ? ("DELETE FROM dbo.formulas WHERE id_cliente = @id AND id_factura IS NULL AND id_venta_accesorios IS NULL;",
+                                       null, idCliente)
+            : ((string?)null, (string?)null, (int?)null);
+        if (borrarSql is not null)
         {
-            var borrar = new SqlCommand("DELETE FROM dbo.formulas WHERE id_factura = @id;", cn, tx);
-            borrar.Parameters.AddWithValue("@id", idFactura);
+            var borrar = new SqlCommand(borrarSql, cn, tx);
+            borrar.Parameters.AddWithValue("@id", idElegido);
             await borrar.ExecuteNonQueryAsync();
         }
-        else if (!string.IsNullOrWhiteSpace(d.NumeroFactura))
+        if (clienteSql is not null)
+        {
+            var buscarCliente = new SqlCommand(clienteSql, cn, tx);
+            buscarCliente.Parameters.AddWithValue("@id", idElegido);
+            idCliente = await buscarCliente.ExecuteScalarAsync() as int?;
+        }
+        else if (idCliente is null && !string.IsNullOrWhiteSpace(d.NumeroFactura))
         {
             var buscar = new SqlCommand(@"
                 SELECT TOP 1 id_factura FROM dbo.facturas
@@ -348,19 +455,26 @@ app.MapPost("/api/formulas", async (GuardarFormulasDto d) =>
             if (idFactura is null)
                 return Results.NotFound(new { mensaje = "No existe la factura No. " + d.NumeroFactura.Trim()
                     + ". Revise el número, o déjelo vacío para guardar las fórmulas sin factura." });
+
+            var buscarCliente = new SqlCommand("SELECT id_cliente FROM dbo.facturas WHERE id_factura = @id;", cn, tx);
+            buscarCliente.Parameters.AddWithValue("@id", idFactura);
+            idCliente = await buscarCliente.ExecuteScalarAsync() as int?;
         }
 
         int guardadas = 0;
         foreach (var fo in d.Formulas ?? [])
         {
             var cmd = new SqlCommand(@"
-                INSERT INTO dbo.formulas (id_factura, nombre_cliente, ojo_derecho, ojo_izquierdo, adicion,
+                INSERT INTO dbo.formulas (id_factura, id_venta_accesorios, id_cliente, nombre_cliente,
+                                          ojo_derecho, ojo_izquierdo, adicion,
                                           distancia, altura, tipo_lente, tipo_montura, doctor,
                                           fecha_entrega, hora_entrega)
-                VALUES (@factura, @nombre, @od, @oi, @adicion,
+                VALUES (@factura, @ventaAcc, @cliente, @nombre, @od, @oi, @adicion,
                         @distancia, @altura, @lente, @montura, @doctor,
                         @fechaEntrega, @horaEntrega);", cn, tx);
             cmd.Parameters.AddWithValue("@factura", (object?)idFactura ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@ventaAcc", (object?)idVentaAcc ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@cliente", (object?)idCliente ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@nombre", Valor(fo.NombreCliente));
             cmd.Parameters.AddWithValue("@od", Valor(fo.OjoDerecho));
             cmd.Parameters.AddWithValue("@oi", Valor(fo.OjoIzquierdo));
@@ -629,24 +743,27 @@ app.MapDelete("/api/accesorios/{id:int}", async (int id) =>
 app.Run();
 
 
-// Al encender el servidor ejecuta Accesorios/base_datos.sql: crea las tablas de accesorios
-// (inventario y ventas) que falten. El script no borra datos y se puede ejecutar muchas veces.
-async Task PrepararTablaAccesorios()
+// Al encender el servidor ejecuta Accesorios/base_datos.sql y Formulas/base_datos.sql (en ese orden):
+// crean las tablas y columnas que falten. Los scripts no borran datos y se pueden ejecutar muchas veces.
+async Task PrepararTablas()
 {
-    var archivo = Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", "Accesorios", "base_datos.sql"));
-    try
+    foreach (var carpeta in new[] { "Accesorios", "Formulas" })
     {
-        var lotes = System.Text.RegularExpressions.Regex.Split(
-            await File.ReadAllTextAsync(archivo), @"^\s*GO\s*$",
-            System.Text.RegularExpressions.RegexOptions.Multiline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-        await using var cn = new SqlConnection(conexion);
-        await cn.OpenAsync();
-        foreach (var lote in lotes.Where(l => !string.IsNullOrWhiteSpace(l)))
-            await new SqlCommand(lote, cn).ExecuteNonQueryAsync();
-    }
-    catch (Exception ex) when (ex is SqlException or IOException)
-    {
-        app.Logger.LogError(ex, "No se pudieron preparar las tablas de accesorios. Ejecute Accesorios/base_datos.sql en SQL Server.");
+        var archivo = Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", carpeta, "base_datos.sql"));
+        try
+        {
+            var lotes = System.Text.RegularExpressions.Regex.Split(
+                await File.ReadAllTextAsync(archivo), @"^\s*GO\s*$",
+                System.Text.RegularExpressions.RegexOptions.Multiline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            await using var cn = new SqlConnection(conexion);
+            await cn.OpenAsync();
+            foreach (var lote in lotes.Where(l => !string.IsNullOrWhiteSpace(l)))
+                await new SqlCommand(lote, cn).ExecuteNonQueryAsync();
+        }
+        catch (Exception ex) when (ex is SqlException or IOException)
+        {
+            app.Logger.LogError(ex, "No se pudo preparar la base de datos. Ejecute {Carpeta}/base_datos.sql en SQL Server.", carpeta);
+        }
     }
 }
 
@@ -749,7 +866,8 @@ record FormulaDto(
     DateOnly? FechaEntrega,
     TimeOnly? HoraEntrega);
 
-record GuardarFormulasDto(int? IdFactura, string? NumeroFactura, List<FormulaDto>? Formulas);
+record GuardarFormulasDto(int? IdFactura, int? IdVentaAccesorios, int? IdCliente,
+    string? NumeroFactura, List<FormulaDto>? Formulas);
 
 record TrazabilidadDto(
     string? NumeroOrden,

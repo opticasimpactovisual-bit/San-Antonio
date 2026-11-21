@@ -39,13 +39,17 @@ const contenedor = document.getElementById("formulas");
         }
 
 
-        // ---------- Buscar la factura y guardar las fórmulas en SQL Server ----------
-        const numeroFactura = document.getElementById("numero_factura");
+        // ---------- Buscar factura, venta de accesorios o cliente y guardar las fórmulas ----------
+        const buscador = document.getElementById("numero_factura");
+        const resultados = document.getElementById("resultados");
         const facturaEncontrada = document.getElementById("factura_encontrada");
-        const sinServidor = "No hay conexión con el servidor. Inicie el servidor y abra la página en http://localhost:5000/Formulas/Formulas_clientes.html";
+        const sinServidor = "No hay conexión con el servidor. Inicie el servidor y abra la página desde http://localhost:5000";
 
-        // Factura buscada con el botón Buscar (null = no se ha buscado ninguna)
-        let facturaCargada = null;
+        // Lo que se eligió en la lista: { tipo: "factura" | "accesorios" | "cliente", id, numero, cliente, ... }
+        // null = no se ha elegido nada (las fórmulas se guardan sin factura)
+        let elegido = null;
+
+        const nombresTipo = { factura: "Factura", accesorios: "Accesorios", cliente: "Cliente" };
 
         // Columna de SQL Server -> nombre del campo en cada fórmula
         const camposFormula = {
@@ -77,6 +81,17 @@ const contenedor = document.getElementById("formulas");
             return texto ? texto.substring(8, 10) + "/" + texto.substring(5, 7) + "/" + texto.substring(0, 4) : "";
         }
 
+        function cuantasFormulas(n) {
+            return n === 1 ? "1 fórmula" : (n || 0) + " fórmulas";
+        }
+
+        // "Factura No. 9099 de Ana Pérez" / "Venta de accesorios No. 12 ..." / "Cliente Ana Pérez"
+        function describir(r) {
+            if (r.tipo === "cliente") return "Cliente " + (r.cliente || "sin nombre");
+            const nombre = r.tipo === "accesorios" ? "Venta de accesorios" : "Factura";
+            return nombre + " No. " + (r.numero || "—") + (r.cliente ? " de " + r.cliente : "");
+        }
+
         // Deja una sola fórmula vacía
         function limpiarFormulas() {
             contenedor.querySelectorAll(".formula").forEach(function (formula, i) {
@@ -89,19 +104,62 @@ const contenedor = document.getElementById("formulas");
             numerarFormulas();
         }
 
-        // Muestra de quién es la factura y carga las fórmulas que ya tenga guardadas
-        async function buscarFactura() {
-            const numero = numeroFactura.value.trim();
-            if (!numero) return;
+        // Busca facturas, ventas de accesorios y clientes registrados y los muestra en una lista
+        async function buscar() {
+            const texto = buscador.value.trim();
+            if (!texto) return;
 
-            let f;
+            let lista;
             try {
-                const respuesta = await fetch("/api/formulas/factura?numero=" + encodeURIComponent(numero));
-                f = await respuesta.json();
+                const respuesta = await fetch("/api/formulas/buscar?texto=" + encodeURIComponent(texto));
+                lista = await respuesta.json();
+            } catch (error) {
+                alert(sinServidor);
+                return;
+            }
+
+            resultados.innerHTML = "";
+            if (lista.length === 0) {
+                const vacio = document.createElement("li");
+                vacio.className = "vacio";
+                vacio.textContent = "No se encontró ninguna factura, venta de accesorios ni cliente con \"" + texto + "\".";
+                resultados.appendChild(vacio);
+            }
+            lista.forEach(function (r) {
+                const boton = document.createElement("button");
+                boton.type = "button";
+                boton.className = "abrir";
+                const partes = [
+                    ["tipo " + r.tipo, nombresTipo[r.tipo]],
+                    ["num", r.tipo === "cliente" ? "" : "No. " + (r.numero || "—")],
+                    ["fec", fechaCorta(r.fecha)],
+                    ["cli", (r.cliente || "Sin cliente") + (r.documento ? " · " + (r.tipo_documento || "") + " " + r.documento : "")],
+                    ["cnt", cuantasFormulas(r.formulas)]
+                ];
+                partes.forEach(function (p) {
+                    const span = document.createElement("span");
+                    span.className = p[0];
+                    span.textContent = p[1];
+                    boton.appendChild(span);
+                });
+                boton.addEventListener("click", function () {
+                    cargar(r.tipo, r.id);
+                });
+                const li = document.createElement("li");
+                li.appendChild(boton);
+                resultados.appendChild(li);
+            });
+            resultados.hidden = false;
+        }
+
+        // Trae las fórmulas de lo que se eligió y las pone en el formulario
+        async function cargar(tipo, id) {
+            let r;
+            try {
+                const respuesta = await fetch("/api/formulas/" + tipo + "/" + id);
+                r = await respuesta.json();
                 if (!respuesta.ok) {
-                    facturaCargada = null;
-                    facturaEncontrada.hidden = true;
-                    alert(f.mensaje);
+                    alert(r.mensaje);
                     return;
                 }
             } catch (error) {
@@ -109,10 +167,10 @@ const contenedor = document.getElementById("formulas");
                 return;
             }
 
-            facturaCargada = f;
+            elegido = r;
             limpiarFormulas();
 
-            const guardadas = f.formulas || [];
+            const guardadas = r.formulas || [];
             for (let i = 1; i < guardadas.length; i++) agregarFormula();
             contenedor.querySelectorAll(".formula").forEach(function (formula, i) {
                 const fo = guardadas[i];
@@ -125,28 +183,33 @@ const contenedor = document.getElementById("formulas");
                 });
             });
 
-            // Factura sin fórmulas: se pone el nombre del cliente de la factura para empezar
-            if (guardadas.length === 0 && f.cliente) {
-                campo(contenedor.querySelector(".formula"), "nombre_cliente").value = f.cliente;
+            // Sin fórmulas: se pone el nombre del cliente para empezar
+            if (guardadas.length === 0 && r.cliente) {
+                campo(contenedor.querySelector(".formula"), "nombre_cliente").value = r.cliente;
             }
 
-            facturaEncontrada.textContent = "Factura No. " + f.numero_factura
-                + (f.cliente ? " de " + f.cliente : "")
-                + (f.fecha_venta ? " · " + fechaCorta(f.fecha_venta) : "")
-                + " · " + (guardadas.length === 1 ? "1 fórmula guardada" : guardadas.length + " fórmulas guardadas");
+            resultados.hidden = true;
+            facturaEncontrada.textContent = describir(r)
+                + (r.fecha ? " · " + fechaCorta(r.fecha) : "")
+                + " · " + cuantasFormulas(guardadas.length) + (guardadas.length === 1 ? " guardada" : " guardadas")
+                + (r.tipo === "cliente" ? " a su nombre" : "");
             facturaEncontrada.hidden = false;
         }
 
-        // Ningún campo es obligatorio. Si se buscó la factura, sus fórmulas se reemplazan
-        // por las del formulario; si solo se escribió el número, se agregan a esa factura;
-        // si el número está vacío, se guardan sin factura.
+        // Ningún campo es obligatorio. Si se eligió una factura, venta o cliente, sus fórmulas
+        // se reemplazan por las del formulario; si no se eligió nada, se guardan sin factura.
         async function guardarFormulas() {
-            const numero = numeroFactura.value.trim();
-            const mismaFactura = facturaCargada && facturaCargada.numero_factura === numero;
+            if (!elegido && buscador.value.trim()) {
+                alert("Elija en la lista a qué factura, venta de accesorios o cliente pertenecen las fórmulas.\n\n"
+                    + "Si no pertenecen a ninguno, borre el texto del buscador y vuelva a guardar.");
+                buscar();
+                return;
+            }
 
             const datos = {
-                idFactura: mismaFactura ? facturaCargada.id_factura : null,
-                numeroFactura: numero || null,
+                idFactura: elegido && elegido.tipo === "factura" ? elegido.id : null,
+                idVentaAccesorios: elegido && elegido.tipo === "accesorios" ? elegido.id : null,
+                idCliente: elegido && elegido.tipo === "cliente" ? elegido.id : null,
                 formulas: Array.from(contenedor.querySelectorAll(".formula")).map(function (formula) {
                     return {
                         nombreCliente: valor(formula, "nombre_cliente"),
@@ -176,7 +239,7 @@ const contenedor = document.getElementById("formulas");
                     return;
                 }
                 const cuantas = resultado.guardadas === 1 ? "1 fórmula guardada" : resultado.guardadas + " fórmulas guardadas";
-                alert(cuantas + (numero ? " en la factura No. " + numero : " sin factura") + ".");
+                alert(cuantas + (elegido ? " en: " + describir(elegido) : " sin factura") + ".");
             } catch (error) {
                 alert(sinServidor);
                 return;
@@ -184,14 +247,21 @@ const contenedor = document.getElementById("formulas");
 
             // Deja la página lista para la siguiente
             limpiarFormulas();
-            numeroFactura.value = "";
-            facturaCargada = null;
+            buscador.value = "";
+            elegido = null;
+            resultados.hidden = true;
             facturaEncontrada.hidden = true;
             window.scrollTo(0, 0);
         }
 
-        document.getElementById("buscar").addEventListener("click", buscarFactura);
-        numeroFactura.addEventListener("keydown", function (evento) {
-            if (evento.key === "Enter") buscarFactura();
+        document.getElementById("buscar").addEventListener("click", buscar);
+        buscador.addEventListener("keydown", function (evento) {
+            if (evento.key === "Enter") buscar();
+        });
+        // Si se cambia el texto del buscador, se suelta lo que se había elegido
+        buscador.addEventListener("input", function () {
+            if (!elegido) return;
+            elegido = null;
+            facturaEncontrada.hidden = true;
         });
         document.getElementById("guardar").addEventListener("click", guardarFormulas);
