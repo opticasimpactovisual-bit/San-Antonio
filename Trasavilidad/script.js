@@ -212,7 +212,14 @@ async function buscarPlanilla() {
 
     resultados.hidden = true;
     if (filas.length === 0) {
-        alert("No hay planillas con el N° de orden " + orden + ".");
+        // No hay planilla guardada: se empieza una nueva con los datos de la factura de ese número
+        if (!sePuedeReemplazar()) return;
+        limpiarPlanilla();
+        numeroOrden.value = orden;
+        await traerFactura();
+        avisoFactura.textContent = "No hay planilla guardada con el N° de orden " + orden + ". Se empezó una nueva. "
+            + avisoFactura.textContent;
+        avisoFactura.hidden = false;
     } else if (filas.length > 1) {
         mostrarResultados(filas);
     } else if (sePuedeReemplazar()) {
